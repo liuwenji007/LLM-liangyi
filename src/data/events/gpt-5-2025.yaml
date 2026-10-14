@@ -1,0 +1,12 @@
+date: 2025-08-07
+side: light
+vendor: OpenAI
+model: GPT-5
+title: GPT-5 成为 ChatGPT 的默认模型
+summary: OpenAI 发布 GPT-5。它把快速回答和延长思考收进同一个系统，由路由器决定何时多想一会儿，并向免费用户逐步开放。
+category:
+  - 发布
+sources:
+  - url: https://openai.com/index/introducing-gpt-5/
+verified: true
+memes: []

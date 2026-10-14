@@ -1,0 +1,12 @@
+date: 2020-05-28
+side: light
+vendor: OpenAI
+model: GPT-3
+title: GPT-3 论文公开
+summary: OpenAI 发表《Language Models are Few-Shot Learners》，描述 1750 亿参数的 GPT-3。论文展示的是少样本提示，而不是为每个任务单独微调。
+category:
+  - 发布
+sources:
+  - url: https://arxiv.org/abs/2005.14165
+verified: true
+memes: []

@@ -1,0 +1,58 @@
+---
+import type { TimelineNode } from "../lib/events";
+import { PIP_SIZE, formatDate, isoDate, relationText } from "../lib/events";
+import EventCard from "./EventCard.astro";
+import Severity from "./Severity.astro";
+
+interface Props {
+  node: TimelineNode;
+}
+
+const { node } = Astro.props;
+const { entry, parent, fallout } = node;
+const { data } = entry;
+const dark = data.side === "dark";
+const size = dark ? PIP_SIZE[data.severity ?? 1] : 8;
+const label = dark ? `暗史：${data.title}，严重程度 ${data.severity}` : `明史：${data.title}`;
+const peekRelation = dark
+  ? parent
+    ? relationText(parent.model, parent.days)
+    : ""
+  : fallout.length > 0
+    ? `之后：${fallout.length} 次翻车`
+    : "";
+const shortTitle = data.title.length > 12 ? `${data.title.slice(0, 12)}…` : data.title;
+const monthDay = isoDate(data.date).slice(5).replace("-", ".");
+---
+
+<li
+  class="node"
+  data-side={data.side}
+  data-vendor={data.vendor}
+  data-id={entry.id}
+  style={`--d: ${size}px`}
+>
+  <button
+    class="pip"
+    type="button"
+    aria-expanded="false"
+    aria-controls={`peek-${entry.id}`}
+    aria-label={label}
+  >
+    <span class="dot"></span>
+  </button>
+  <span class="ghost" aria-hidden="true"><time>{monthDay}</time> {shortTitle}</span>
+  <div class="peek" id={`peek-${entry.id}`} hidden>
+    <div class="peek-top">
+      <time datetime={isoDate(data.date)}>{formatDate(data.date)}</time>
+      <span>{data.vendor}</span>
+      {dark && data.severity && <Severity level={data.severity} />}
+    </div>
+    <p class="peek-title">{data.title}</p>
+    {peekRelation && <p class="peek-rel">{peekRelation}</p>}
+    <button class="peek-go" type="button" data-go={entry.id}>
+      {dark ? "翻过去看 →" : "← 翻过去看"}
+    </button>
+  </div>
+  <EventCard node={node} />
+</li>

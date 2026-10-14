@@ -1,0 +1,133 @@
+---
+import "../styles/global.css";
+import { issueUrl } from "../config";
+import { buildTimeline, groupByYear } from "../lib/events";
+import SideToggle from "../components/SideToggle.astro";
+import VendorFilter from "../components/VendorFilter.astro";
+import Timeline from "../components/Timeline.astro";
+
+const nodes = await buildTimeline();
+const years = groupByYear(nodes);
+const vendors = [...new Set(nodes.map((node) => node.entry.data.vendor))].sort((a, b) =>
+  a.localeCompare(b, "en"),
+);
+const lightCount = nodes.filter((node) => node.entry.data.side === "light").length;
+const darkCount = nodes.length - lightCount;
+const sides = Object.fromEntries(nodes.map((node) => [node.entry.id, node.entry.data.side]));
+
+const title = "两仪 · 大模型编年";
+const description = "中文世界有出处的大模型翻车史，配上同一时期的发布作对照。默认是明史，点太极翻到暗史。";
+const site = Astro.site ?? new URL("https://liangyi.pages.dev");
+const ogImage = new URL("/og.png", site).href;
+const canonical = new URL("/", site).href;
+
+const links = {
+  event: issueUrl("event.yml"),
+  meme: issueUrl("meme.yml"),
+  correction: issueUrl("correction.yml"),
+};
+const hasRepository = links.event.startsWith("http");
+---
+
+<!doctype html>
+<html lang="zh-CN" class="no-js" data-side="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="两仪" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <script is:inline define:vars={{ sides }}>
+      const root = document.documentElement;
+      root.classList.remove("no-js");
+      const params = new URLSearchParams(location.search);
+      const hash = decodeURIComponent(location.hash.slice(1));
+      let side = params.get("side") === "dark" ? "dark" : "light";
+      if (!params.has("side") && sides[hash]) side = sides[hash];
+      root.dataset.side = side;
+    </script>
+  </head>
+  <body>
+    <div class="page">
+      <header class="mast">
+        <div>
+          <p class="eyebrow">LIANGYI</p>
+          <h1>两仪</h1>
+          <p class="lede">
+            同一条时间线，<strong class="only-light">明史记发布与节点</strong><strong class="only-dark"
+              >暗史记翻车与事后</strong
+            >。
+            <span class="hint only-light">暗处的点是另一面，靠近看看。</span><span class="hint only-dark"
+              >亮处的点是当时的发布。</span
+            >
+          </p>
+        </div>
+        <SideToggle />
+      </header>
+      <VendorFilter vendors={vendors} />
+      <p class="stats" id="stats">
+        <span class="only-light">明史 {lightCount} 条 · 暗处 {darkCount} 个点</span>
+        <span class="only-dark">暗史 {darkCount} 条 · 明处 {lightCount} 个点</span>
+      </p>
+      <p class="empty" id="empty" hidden>这个厂商还没有条目。</p>
+      <Timeline years={years} />
+      <footer class="foot" id="contribute">
+        <nav>
+          <a href={links.event}>投稿事件</a>
+          <a href={links.meme}>投稿梗图</a>
+          <a href={links.correction}>勘误与申诉</a>
+        </nav>
+        <p>
+          每条事件都附公开来源，经维护者核实后才会出现。「事后」只写厂商、监管方或法院做了什么，不写编者评论。梗图是社区二创，和证据分开，不证明事件本身。
+        </p>
+        <p class="disclaimer">
+          本站整理公开报道，不代表对任何公司或个人的法律评价。内容如有错误或需要补充对方回应，请提交勘误与申诉，核实后会更正并注明。
+        </p>
+        {
+          !hasRepository && (
+            <>
+              <section id="event-guide">
+                <h2>投稿事件</h2>
+                <p>
+                  在仓库里打开 Issue，选择「投稿事件」。维护者核对来源后，用 <code>pnpm draft</code>{" "}
+                  生成草稿，改完并标成已核实，再提交 PR。
+                </p>
+              </section>
+              <section id="meme-guide">
+                <h2>投稿梗图</h2>
+                <p>
+                  在仓库里打开 Issue，选择「投稿梗图」，把图片拖进正文。维护者把图压成 WebP，放进{" "}
+                  <code>public/memes/事件编号/</code>，在对应 YAML 的 <code>memes</code> 里加一条，提交 PR。
+                </p>
+              </section>
+              <section id="correction-guide">
+                <h2>勘误与申诉</h2>
+                <p>
+                  在仓库里打开 Issue，选择「勘误与申诉」，写明事件编号、哪里有误和依据。涉及的厂商或当事人也可以用它补充回应。
+                </p>
+              </section>
+            </>
+          )
+        }
+      </footer>
+    </div>
+    <SideToggle floating />
+    <p class="sr-only" aria-live="polite" id="announce"></p>
+    <script>
+      import "../scripts/main.ts";
+    </script>
+  </body>
+</html>

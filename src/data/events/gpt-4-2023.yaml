@@ -1,0 +1,12 @@
+date: 2023-03-14
+side: light
+vendor: OpenAI
+model: GPT-4
+title: GPT-4 发布
+summary: OpenAI 发布 GPT-4。它接受图像输入，并在多项专业考试上给出高于 GPT-3.5 的成绩。ChatGPT Plus 用户从这一天起可以使用它。
+category:
+  - 发布
+sources:
+  - url: https://openai.com/index/gpt-4-research/
+verified: true
+memes: []

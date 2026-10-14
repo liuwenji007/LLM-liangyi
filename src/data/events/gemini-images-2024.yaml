@@ -1,0 +1,17 @@
+date: 2024-02-22
+side: dark
+vendor: Google
+model: Gemini
+title: Gemini 画历史人物时强行多样化
+summary: Gemini 的人物图像功能上线后，用户发现它会把纳粹士兵、美国开国元勋等历史人物画成与史料不符的形象。这些图在社交平台上迅速传开。
+category:
+  - 偏见
+severity: 4
+response: Google 暂停人物图像生成。2 月 23 日，公司发文承认，模型在描绘人物时矫枉过正，历史场景也没能幸免。
+sources:
+  - url: https://blog.google/products/gemini/gemini-image-generation-issue/
+verified: true
+memes:
+  - file: 001.webp
+    title: 按配额绘制
+    author: 两仪

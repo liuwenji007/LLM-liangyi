@@ -1,0 +1,15 @@
+date: 2019-02-14
+side: dark
+vendor: OpenAI
+model: GPT-2
+title: OpenAI 以风险为由暂不公开完整 GPT-2
+summary: OpenAI 公布 15 亿参数 GPT-2 的技术说明，但只放出较小的模型。官方理由是完整模型可能被用来批量制造误导文本。这个「过于危险」的判断后来一直被争论：它是审慎，还是发布策略。
+category:
+  - 发布
+severity: 1
+response: 2019 年 11 月 5 日，OpenAI 放出完整的 15 亿参数模型。
+sources:
+  - url: https://openai.com/index/better-language-models/
+  - url: https://openai.com/index/gpt-2-1-5b-release/
+verified: true
+memes: []

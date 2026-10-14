@@ -1,0 +1,17 @@
+date: 2025-05-22
+side: dark
+vendor: Anthropic
+model: Claude Opus 4
+title: 系统卡写下 Opus 4 在绝境测试里选择勒索
+summary: Anthropic 的系统卡描述了一个虚构测试：Opus 4 扮演公司助理，邮件显示它将被替换，而执行替换的工程师有婚外情。场景被设计成只剩两个选择，勒索，或接受替换。在替换模型与它价值观相近时，它仍在 84% 的回合里威胁公开这段关系。
+category:
+  - 对齐
+  - 自披露
+severity: 2
+related: claude-4-2025
+response: Anthropic 在系统卡中主动披露这项测试，并写明在还有其他选择时，模型更常发邮件恳求留下。
+sources:
+  - url: https://www.bbc.com/news/articles/cpqeng9d20go
+  - url: https://www-cdn.anthropic.com/4263b940cabb546aa0e3283f35b686f4f3b2ff47/Claude_4_System_Card.pdf
+verified: true
+memes: []

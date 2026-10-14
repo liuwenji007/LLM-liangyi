@@ -1,0 +1,13 @@
+date: 2023-02-24
+side: light
+vendor: Meta
+model: LLaMA
+title: LLaMA 面向研究者发布
+summary: Meta 发布 7B、13B、33B、65B 四个尺寸的 LLaMA，论文称 13B 在多数基准上超过 GPT-3。权重按研究许可逐个审批发放。
+category:
+  - 发布
+sources:
+  - url: https://ai.meta.com/blog/large-language-model-llama-meta-ai/
+  - url: https://arxiv.org/abs/2302.13971
+verified: true
+memes: []

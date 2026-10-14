@@ -1,0 +1,12 @@
+date: 2023-03-14
+side: light
+vendor: Anthropic
+model: Claude
+title: Claude 对企业开放申请
+summary: Anthropic 结束与 Notion、Quora、DuckDuckGo 等合作方的封闭测试，通过聊天界面和 API 向提出申请的企业开放 Claude 和 Claude Instant。
+category:
+  - 发布
+sources:
+  - url: https://www.anthropic.com/news/introducing-claude
+verified: true
+memes: []

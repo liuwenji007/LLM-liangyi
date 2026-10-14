@@ -1,0 +1,12 @@
+date: 2025-05-22
+side: light
+vendor: Anthropic
+model: Claude Opus 4
+title: Claude Opus 4 与 Sonnet 4 发布
+summary: Anthropic 发布 Claude Opus 4 和 Sonnet 4，主打长时间编程和代理任务。两个模型都可以选择快速回答或延长思考。
+category:
+  - 发布
+sources:
+  - url: https://www.anthropic.com/news/claude-4
+verified: true
+memes: []

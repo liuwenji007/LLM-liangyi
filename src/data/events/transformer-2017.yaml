@@ -1,0 +1,12 @@
+date: 2017-06-12
+side: light
+vendor: Google
+model: Transformer
+title: 《Attention Is All You Need》发表
+summary: Google 的八位研究者发表 Transformer。它用自注意力替换循环网络，让序列可以并行处理。后来的 GPT、BERT 和其他大模型都从这篇论文长出来。
+category:
+  - 架构
+sources:
+  - url: https://arxiv.org/abs/1706.03762
+verified: true
+memes: []

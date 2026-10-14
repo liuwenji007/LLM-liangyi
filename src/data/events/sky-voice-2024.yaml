@@ -1,0 +1,15 @@
+date: 2024-05-20
+side: dark
+vendor: OpenAI
+model: GPT-4o（Sky）
+title: Sky 声音被指接近斯嘉丽·约翰逊
+summary: GPT-4o 的一种声音叫做 Sky。演员斯嘉丽·约翰逊表示，它像自己在电影《她》里的配音，而她此前拒绝了 OpenAI 的合作。OpenAI 否认有意模仿，但暂停了这个声音。
+category:
+  - 人格
+severity: 3
+related: gpt-4o-2024
+response: OpenAI 暂停 Sky，并说明声音来自另一位配音演员，不是约翰逊本人。
+sources:
+  - url: https://openai.com/index/how-the-voices-for-chatgpt-were-chosen/
+verified: true
+memes: []

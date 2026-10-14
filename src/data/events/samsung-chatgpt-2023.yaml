@@ -1,0 +1,16 @@
+date: 2023-05-02
+side: dark
+vendor: OpenAI
+model: ChatGPT
+title: 三星限制员工使用 ChatGPT
+summary: The Register 报道，三星半导体部门出现员工把会议内容和设备相关代码输入 ChatGPT 的情况。输入进外部服务的内容不在公司自己的控制范围内。
+category:
+  - 隐私
+  - 误用
+severity: 3
+related: chatgpt-2022
+response: 三星在内部限制使用外部生成式聊天工具，并转向自建方案。
+sources:
+  - url: https://www.theregister.com/2023/05/02/samsung_bans_chatgpt/
+verified: true
+memes: []

@@ -1,0 +1,10 @@
+---
+interface Props {
+  level: number;
+}
+const { level } = Astro.props;
+---
+
+<span class="severity" aria-hidden="true">
+  {[1, 2, 3, 4, 5].map((step) => <i class={step <= level ? "on" : ""} />)}
+</span>

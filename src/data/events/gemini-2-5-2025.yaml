@@ -1,0 +1,12 @@
+date: 2025-03-25
+side: light
+vendor: Google
+model: Gemini 2.5 Pro
+title: Gemini 2.5 Pro 实验版发布
+summary: Google 发布带思考过程的 Gemini 2.5 Pro 实验版，上下文窗口为 100 万 token。发布时它排在 LMArena 偏好榜前列。
+category:
+  - 发布
+sources:
+  - url: https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-model-thinking-updates-march-2025/
+verified: true
+memes: []

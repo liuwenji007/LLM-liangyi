@@ -1,0 +1,50 @@
+name: 勘误与申诉
+description: 指出已收录条目的错误，或以当事方身份补充回应
+title: "勘误："
+labels: ["correction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        核实后会直接更正条目，并在提交记录里写明改了什么。厂商或当事人补充的回应，确认来源后写进「事后」。
+  - type: input
+    id: event
+    attributes:
+      label: 事件编号
+      description: 卡片「复制链接」里 # 后面的部分，也就是 YAML 文件名。
+      placeholder: gpt-4o-sycophancy-2025
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 类型
+      options:
+        - 事实有误
+        - 来源失效
+        - 严重程度不当
+        - 关联的发布不对
+        - 当事方补充回应
+        - 要求下架
+    validations:
+      required: true
+  - type: textarea
+    id: detail
+    attributes:
+      label: 哪里有误，应该怎么改
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 依据
+      description: 公开链接，每行一个。当事方回应请给出官方渠道的出处。
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我提供的依据是公开、可核对的。
+          required: true

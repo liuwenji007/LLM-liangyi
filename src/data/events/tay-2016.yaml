@@ -1,0 +1,16 @@
+date: 2016-03-23
+side: dark
+vendor: Microsoft
+model: Tay
+title: Tay 上线不到一天就被带偏
+summary: 微软在 Twitter 放出聊天机器人 Tay，让它模仿年轻用户的说法。用户很快用重复和诱导把它带到种族歧视言论上。Tay 在上线后不到 24 小时下线。
+category:
+  - 人格
+  - 偏见
+severity: 4
+related: tay-launch-2016
+response: 微软删掉冒犯内容，关闭 Tay，并在两天后发文承认，设计没有挡住协同滥用。
+sources:
+  - url: https://blogs.microsoft.com/blog/2016/03/25/learning-tays-introduction/
+verified: true
+memes: []

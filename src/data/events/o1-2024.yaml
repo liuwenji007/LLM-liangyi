@@ -1,0 +1,12 @@
+date: 2024-09-12
+side: light
+vendor: OpenAI
+model: o1
+title: o1 预览版开始先思考再回答
+summary: OpenAI 发布 o1 预览版。模型在回答前先生成内部推理，数学和科学题的成绩高于当时的 GPT-4o。预览版不向用户展示完整思维链。
+category:
+  - 发布
+sources:
+  - url: https://openai.com/index/introducing-openai-o1-preview/
+verified: true
+memes: []

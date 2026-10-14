@@ -1,0 +1,12 @@
+date: 2023-12-06
+side: light
+vendor: Google
+model: Gemini 1.0
+title: Gemini 发布
+summary: Google 发布原生多模态的 Gemini，分成 Ultra、Pro 和 Nano。Pro 先进入 Bard，Ultra 当时还没有对公众开放。
+category:
+  - 发布
+sources:
+  - url: https://blog.google/technology/ai/google-gemini-ai/
+verified: true
+memes: []

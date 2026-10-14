@@ -1,0 +1,43 @@
+name: 投稿梗图
+description: 给一条已有事件贡献二创梗图
+title: "梗图："
+labels: ["meme"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        梗图挂在事件下面，并标成二创。它不是证据，不能代替来源。不要投稿伪造的对话截图。
+  - type: input
+    id: event
+    attributes:
+      label: 事件
+      description: 页面上该事件的编号，例如 bing-sydney-2023。
+      placeholder: bing-sydney-2023
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: 标题
+      placeholder: 你并不爱她
+  - type: input
+    id: author
+    attributes:
+      label: 署名
+      placeholder: "@name"
+    validations:
+      required: true
+  - type: textarea
+    id: image
+    attributes:
+      label: 图片
+      description: 把图片拖进这个框。单张尽量小于 500KB。
+    validations:
+      required: true
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: 授权
+      options:
+        - label: 我是作者，或有权以 CC BY-NC 4.0 分享这张图。图中没有针对具体个人的攻击，也不是伪造的证据截图。
+          required: true

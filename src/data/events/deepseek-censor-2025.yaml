@@ -1,0 +1,16 @@
+date: 2025-01-28
+side: dark
+vendor: DeepSeek
+model: DeepSeek
+title: 敏感政治问题的回答被当场换掉
+summary: 《卫报》记录，DeepSeek 对天安门、台湾等议题表示超出范围。另一些用户看到它先写出一段话，再把这段文字从屏幕上删掉，换成拒绝。
+category:
+  - 审查
+severity: 4
+related: deepseek-r1-2025
+response: DeepSeek 没有就此发表公开说明。
+sources:
+  - url: https://www.theguardian.com/technology/2025/jan/28/we-tried-out-deepseek-it-works-well-until-we-asked-it-about-tiananmen-square-and-taiwan
+  - url: https://www.theguardian.com/technology/2025/jan/28/chinese-ai-chatbot-deepseek-censors-itself-in-realtime-users-report
+verified: true
+memes: []

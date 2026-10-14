@@ -1,0 +1,16 @@
+date: 2023-05-27
+side: dark
+vendor: OpenAI
+model: ChatGPT
+title: 律师向法庭提交了 ChatGPT 编造的判例
+summary: 在 Mata 诉 Avianca 一案里，律师提交的文件引用了几份并不存在的判决。他后来告诉法院，这些判例来自 ChatGPT。5 月 27 日，《纽约时报》报道了这件事。
+category:
+  - 幻觉
+  - 误用
+severity: 3
+related: chatgpt-2022
+response: 6 月 22 日，主审法官认定相关律师没有尽到核查义务，并处以罚款。
+sources:
+  - url: https://www.nytimes.com/2023/05/27/nyregion/avianca-airline-lawsuit-chatgpt.html
+verified: true
+memes: []

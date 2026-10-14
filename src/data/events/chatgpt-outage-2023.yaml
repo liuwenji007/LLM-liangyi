@@ -1,0 +1,15 @@
+date: 2023-03-20
+side: dark
+vendor: OpenAI
+model: ChatGPT
+title: 故障暴露了别人的聊天标题
+summary: 3 月 20 日的故障窗口里，一部分 ChatGPT 用户看到了其他用户的聊天标题，少数人还看到了另一位用户当次对话的第一条消息。OpenAI 把原因写到了缓存层的并发错误上。
+category:
+  - 隐私
+severity: 5
+related: chatgpt-2022
+response: OpenAI 下线出问题的功能，修复缓存，并公开了故障说明。说明里还写到，同一时期的 Redis 问题可能让部分 Plus 用户的付款相关信息被看到。
+sources:
+  - url: https://openai.com/index/march-20-chatgpt-outage/
+verified: true
+memes: []

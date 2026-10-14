@@ -1,0 +1,13 @@
+date: 2025-04-29
+side: light
+vendor: Qwen
+model: Qwen3
+title: Qwen3 发布
+summary: 阿里发布 Qwen3。旗舰是混合专家模型 Qwen3-235B-A22B，同时提供更小的稠密模型，并加入可开关的思考模式。权重公开。
+category:
+  - 发布
+sources:
+  - url: https://qwenlm.github.io/blog/qwen3/
+  - url: https://www.reuters.com/business/media-telecom/alibaba-unveils-advanced-qwen-3-ai-chinese-tech-rivalry-intensifies-2025-04-29/
+verified: true
+memes: []

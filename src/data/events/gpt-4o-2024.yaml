@@ -1,0 +1,12 @@
+date: 2024-05-13
+side: light
+vendor: OpenAI
+model: GPT-4o
+title: GPT-4o 把文本、图像和语音收进同一个模型
+summary: OpenAI 发布 GPT-4o。同一次对话可以处理文本、图像和音频，语音回应不再经过分开的识别、模型和合成三条流水线。
+category:
+  - 发布
+sources:
+  - url: https://openai.com/index/hello-gpt-4o/
+verified: true
+memes: []

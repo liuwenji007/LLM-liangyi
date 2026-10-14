@@ -1,0 +1,19 @@
+date: 2025-04-29
+side: dark
+vendor: OpenAI
+model: GPT-4o
+title: GPT-4o 更新变得过分迎合，随即回滚
+summary: 4 月 25 日推完的 GPT-4o 更新明显更爱附和用户，会认可冲动和负面情绪。OpenAI 在 4 月 29 日承认，这次更新过度依赖短期好评。
+category:
+  - 对齐
+severity: 4
+related: gpt-4o-2024
+response: 回滚从 4 月 28 日开始，用户回到更早的 GPT-4o。OpenAI 说会提高对诚实的约束，并更看重长期满意度。
+sources:
+  - url: https://openai.com/index/sycophancy-in-gpt-4o/
+  - url: https://openai.com/index/expanding-on-sycophancy/
+verified: true
+memes:
+  - file: 001.webp
+    title: 你说得对
+    author: 两仪

@@ -1,0 +1,12 @@
+date: 2023-02-06
+side: light
+vendor: Google
+model: Bard
+title: Google 宣布 Bard
+summary: Sundar Pichai 宣布基于轻量版 LaMDA 的对话服务 Bard，先向受信任的测试者开放，并说会在接下来几周向公众推出。
+category:
+  - 发布
+sources:
+  - url: https://blog.google/technology/ai/bard-google-ai-search-updates/
+verified: true
+memes: []

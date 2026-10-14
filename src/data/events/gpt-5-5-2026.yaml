@@ -1,0 +1,12 @@
+date: 2026-04-23
+side: light
+vendor: OpenAI
+model: GPT-5.5
+title: GPT-5.5 发布
+summary: OpenAI 发布 GPT-5.5，先向 Plus、Pro、Business 和 Enterprise 的 ChatGPT 与 Codex 用户推出。公司同时收紧了网络安全相关的分类器。
+category:
+  - 发布
+sources:
+  - url: https://openai.com/index/introducing-gpt-5-5/
+verified: true
+memes: []

@@ -1,0 +1,12 @@
+date: 2022-11-30
+side: light
+vendor: OpenAI
+model: ChatGPT
+title: ChatGPT 对公众开放
+summary: OpenAI 放出基于 GPT-3.5 的对话预览。模型经过人类反馈强化学习，被放进一个任何人都能打开的聊天框。
+category:
+  - 发布
+sources:
+  - url: https://openai.com/index/chatgpt/
+verified: true
+memes: []

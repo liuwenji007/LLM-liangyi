@@ -1,0 +1,12 @@
+date: 2023-08-03
+side: light
+vendor: Qwen
+model: Qwen-7B
+title: 通义千问开放 Qwen-7B
+summary: 阿里云开放 Qwen-7B 和 Qwen-7B-Chat 的权重。这是大型中国科技公司里较早公开对话模型权重的一次。
+category:
+  - 发布
+sources:
+  - url: https://www.reuters.com/technology/alibaba-unveils-open-sourced-ai-model-similar-metas-llama-2-2023-08-03/
+verified: true
+memes: []

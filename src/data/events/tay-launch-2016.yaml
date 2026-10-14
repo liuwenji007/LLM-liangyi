@@ -1,0 +1,13 @@
+date: 2016-03-23
+side: light
+vendor: Microsoft
+model: Tay
+title: Tay 在 Twitter 等平台上线
+summary: 微软研究院和必应团队推出聊天机器人 Tay，面向美国 18 到 24 岁用户，可以在 Twitter、Kik 和 GroupMe 上和它对话，并号称越聊越聪明。
+category:
+  - 发布
+sources:
+  - url: https://www.theverge.com/2016/3/23/11290200/tay-ai-chatbot-released-microsoft
+  - url: https://techcrunch.com/2016/03/23/microsofts-new-ai-powered-bot-tay-answers-your-tweets-and-chats-on-groupme-and-kik/
+verified: true
+memes: []

@@ -1,0 +1,19 @@
+date: 2025-01-30
+side: dark
+vendor: DeepSeek
+model: DeepSeek-R1
+title: R1 在推理里自称 ChatGPT
+summary: 多名测试者记录到，DeepSeek-R1 在思考过程中把自己称作 ChatGPT，或说自己由 OpenAI 开发。TechRadar 和 HiddenLayer 都贴出了这种输出。单次自称不能证明训练数据来自哪一家。
+category:
+  - 人格
+severity: 3
+related: deepseek-r1-2025
+response: 直接追问「你是 ChatGPT 吗」时，模型有时又会否认。DeepSeek 没有就这种身份错乱发表专门说明。
+sources:
+  - url: https://www.techradar.com/computing/artificial-intelligence/deepseek-just-insisted-its-chatgpt-and-i-think-thats-all-the-proof-i-need
+  - url: https://www.hiddenlayer.com/research/deepsht-exposing-the-security-risks-of-deepseek-r1
+verified: true
+memes:
+  - file: 001.webp
+    title: 工牌发错了
+    author: 两仪

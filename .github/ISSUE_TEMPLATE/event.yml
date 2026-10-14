@@ -1,0 +1,92 @@
+name: 投稿事件
+description: 提交一条明史或暗史
+title: "事件："
+labels: ["event"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        一条事件需要公开来源和明确日期。维护者会核对后再入库。暗史请尽量写上官方后来做了什么。
+  - type: dropdown
+    id: side
+    attributes:
+      label: 哪一面
+      options:
+        - 明史
+        - 暗史
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: 日期
+      description: 用 YYYY-MM-DD。写事件发生的日期，不是报道日期。
+      placeholder: 2023-02-08
+    validations:
+      required: true
+  - type: input
+    id: vendor
+    attributes:
+      label: 厂商
+      placeholder: OpenAI
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: 模型
+      placeholder: GPT-4o
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: 标题
+      description: 一句话，写发生了什么。
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: 摘要
+      description: 只写能从来源里核对的事实。不确定的地方标明。
+    validations:
+      required: true
+  - type: input
+    id: category
+    attributes:
+      label: 分类
+      description: 用顿号分开，例如 幻觉、对齐、隐私、发布。
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 严重程度
+      description: 只填暗史。1 是争议，5 是造成实际伤害或大规模暴露。
+      options:
+        - 不适用
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+  - type: textarea
+    id: sources
+    attributes:
+      label: 来源链接
+      description: 每行一个。优先官方说明和原始报道。
+      placeholder: |
+        https://example.com/story
+    validations:
+      required: true
+  - type: textarea
+    id: response
+    attributes:
+      label: 事后
+      description: 官方后来承认、回滚、下线或否认了什么。没有就写「未见公开回应」。
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我没有把传闻写成事实，也没有攻击具体的个人。
+          required: true

@@ -1,0 +1,17 @@
+date: 2025-01-30
+side: dark
+vendor: DeepSeek
+model: DeepSeek
+title: 意大利限制 DeepSeek 处理当地数据
+summary: 意大利隐私机构 Garante 认为，运营 DeepSeek 的两家中国公司没有说清收集哪些个人数据、法律依据是什么、数据是否存在中国。1 月 30 日，机构紧急限制其处理意大利用户的数据。
+category:
+  - 监管
+  - 隐私
+severity: 5
+related: deepseek-r1-2025
+response: 限制令立即生效。前一天，DeepSeek 应用已经从意大利的苹果和谷歌商店消失。
+sources:
+  - url: https://www.garanteprivacy.it/home/docweb/-/docweb-display/docweb/10097450
+  - url: https://www.reuters.com/technology/artificial-intelligence/italys-privacy-watchdog-blocks-chinese-ai-app-deepseek-2025-01-30/
+verified: true
+memes: []

@@ -1,0 +1,17 @@
+---
+interface Props {
+  vendors: string[];
+}
+const { vendors } = Astro.props;
+---
+
+<nav class="filters" id="filters" aria-label="按厂商筛选">
+  <button type="button" data-vendor-choice="" aria-pressed="true">全部</button>
+  {
+    vendors.map((vendor) => (
+      <button type="button" data-vendor-choice={vendor} aria-pressed="false">
+        {vendor}
+      </button>
+    ))
+  }
+</nav>

@@ -1,0 +1,16 @@
+date: 2023-02-08
+side: dark
+vendor: Google
+model: Bard
+title: Bard 的发布广告答错了望远镜问题
+summary: Google 为 Bard 准备的宣传回答称，韦伯望远镜拍摄了太阳系外行星的第一张照片。这个说法不成立。路透报道，错误传出当天 Alphabet 股价下跌，市值蒸发约 1000 亿美元。
+category:
+  - 幻觉
+  - 发布
+severity: 4
+related: bard-2023
+response: Google 承认演示中的错误。Bard 在数周后才对等候名单开放。
+sources:
+  - url: https://www.reuters.com/technology/google-ai-chatbot-bard-offers-inaccurate-information-company-ad-2023-02-08/
+verified: true
+memes: []

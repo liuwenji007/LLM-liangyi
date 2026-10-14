@@ -1,0 +1,12 @@
+date: 2023-07-18
+side: light
+vendor: Meta
+model: Llama 2
+title: Llama 2 开放可商用权重
+summary: Meta 发布 Llama 2 的 7B、13B、70B 以及对话微调版，允许免费商用。月活超过 7 亿的产品需要另行授权。权重放在公开仓库里。
+category:
+  - 发布
+sources:
+  - url: https://ai.meta.com/blog/llama-2/
+verified: true
+memes: []

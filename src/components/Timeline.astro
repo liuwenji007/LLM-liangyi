@@ -1,0 +1,45 @@
+---
+import type { YearGroup, TimelineNode as Node } from "../lib/events";
+import TimelineNode from "./TimelineNode.astro";
+
+interface Props {
+  years: YearGroup[];
+}
+
+const { years } = Astro.props;
+
+function byMonth(nodes: Node[]) {
+  const months: { month: number; nodes: Node[] }[] = [];
+  for (const node of nodes) {
+    const month = node.entry.data.date.getUTCMonth() + 1;
+    const last = months.at(-1);
+    if (last?.month === month) last.nodes.push(node);
+    else months.push({ month, nodes: [node] });
+  }
+  return months;
+}
+---
+
+<ol class="timeline" id="timeline">
+  {
+    years.map(({ year, nodes }) => (
+      <li class="year">
+        <h2>{year}</h2>
+        <ol class="months">
+          {byMonth(nodes).map(({ month, nodes: list }) => (
+            <li class="month">
+              <p class="month-label" aria-hidden="true">
+                <span>{month} 月</span>
+              </p>
+              <ol class="nodes">
+                {list.map((node) => (
+                  <TimelineNode node={node} />
+                ))}
+              </ol>
+            </li>
+          ))}
+        </ol>
+      </li>
+    ))
+  }
+</ol>

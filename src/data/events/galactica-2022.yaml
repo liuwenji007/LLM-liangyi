@@ -1,0 +1,16 @@
+date: 2022-11-17
+side: dark
+vendor: Meta
+model: Galactica
+title: Galactica 演示上线三天即关闭
+summary: Meta 在 11 月 15 日开放面向科学文本的 Galactica 演示。用户很快让它写出带有虚构引用、看起来像论文的文字。11 月 17 日，演示下线。
+category:
+  - 幻觉
+  - 发布
+severity: 4
+related: galactica-launch-2022
+response: Meta 关闭了公开演示。论文仍可查阅，同一个演示没有马上重新开放。
+sources:
+  - url: https://www.technologyreview.com/2022/11/18/1063487/meta-large-language-model-ai-only-survived-three-days-gpt-3-science/
+verified: true
+memes: []

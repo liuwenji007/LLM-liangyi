@@ -1,0 +1,12 @@
+date: 2024-12-26
+side: light
+vendor: DeepSeek
+model: DeepSeek-V3
+title: DeepSeek-V3 开放权重
+summary: DeepSeek 发布混合专家模型 V3，并公开权重和技术报告。报告给出了训练用量，也给出了它和当时闭源模型的基准对比。
+category:
+  - 发布
+sources:
+  - url: https://github.com/deepseek-ai/DeepSeek-V3
+verified: true
+memes: []

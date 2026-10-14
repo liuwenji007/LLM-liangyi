@@ -1,0 +1,15 @@
+date: 2023-03-03
+side: dark
+vendor: Meta
+model: LLaMA
+title: LLaMA 权重流出批准名单
+summary: Meta 在 2 月把 LLaMA 权重发给申请通过的研究者，并禁止再分发。3 月初，完整权重经由论坛传开，研究许可挡不住已经下载的副本。
+category:
+  - 泄露
+severity: 3
+related: llama-2023
+response: Meta 没有把这次流出改成正式的开放许可。可商用的许可要到 7 月的 Llama 2 才出现。
+sources:
+  - url: https://www.theverge.com/2023/3/8/23629362/meta-ai-language-model-llama-leak-online-misuse
+verified: true
+memes: []

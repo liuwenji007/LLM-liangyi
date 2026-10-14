@@ -1,0 +1,12 @@
+date: 2025-04-05
+side: light
+vendor: Meta
+model: Llama 4
+title: Llama 4 Scout 与 Maverick 开放权重
+summary: Meta 发布原生多模态的 Llama 4 Scout 和 Maverick，第一次在 Llama 里使用混合专家。Scout 的上下文窗口标到 1000 万 token。更大的 Behemoth 当时仍在训练。
+category:
+  - 发布
+sources:
+  - url: https://ai.meta.com/blog/llama-4-multimodal-intelligence/
+verified: true
+memes: []

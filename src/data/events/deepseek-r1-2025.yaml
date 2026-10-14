@@ -1,0 +1,12 @@
+date: 2025-01-20
+side: light
+vendor: DeepSeek
+model: DeepSeek-R1
+title: DeepSeek-R1 发布并开放权重
+summary: DeepSeek 发布推理模型 R1，同时公开 R1-Zero 的训练路线和权重。推理过程默认可见，API 价格低于当时的 OpenAI o1。
+category:
+  - 发布
+sources:
+  - url: https://github.com/deepseek-ai/DeepSeek-R1
+verified: true
+memes: []

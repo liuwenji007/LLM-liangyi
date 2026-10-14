@@ -1,0 +1,103 @@
+---
+import type { TimelineNode } from "../lib/events";
+import { formatDate, isoDate, relationText, sourceHost, tagLabel } from "../lib/events";
+import Severity from "./Severity.astro";
+
+interface Props {
+  node: TimelineNode;
+}
+
+const { node } = Astro.props;
+const { entry, parent, fallout } = node;
+const { data } = entry;
+const dark = data.side === "dark";
+const tags = data.category.map(tagLabel).filter((label): label is string => Boolean(label));
+const plain = data.category.filter((category) => !tagLabel(category));
+---
+
+<article class="card" id={entry.id} aria-labelledby={`title-${entry.id}`}>
+  <div class="card-top">
+    <time datetime={isoDate(data.date)}>{formatDate(data.date)}</time>
+    <span class="vendor">{data.vendor}</span>
+    {tags.map((tag) => <span class="tag">{tag}</span>)}
+    {plain.length > 0 && <span>{plain.join(" · ")}</span>}
+    <button class="copy" type="button" data-copy={entry.id}>复制链接</button>
+  </div>
+  <h3 id={`title-${entry.id}`} tabindex="-1">{data.title}</h3>
+  <p class="model">{data.model}</p>
+  {
+    parent && (
+      <button class="rel" type="button" data-rel={parent.id}>
+        {relationText(parent.model, parent.days)}
+      </button>
+    )
+  }
+  <p class="summary">{data.summary}</p>
+  {
+    dark && data.severity && (
+      <div class="meta-row">
+        <Severity level={data.severity} />
+        <span>严重程度 {data.severity} / 5</span>
+      </div>
+    )
+  }
+  {
+    dark && data.response && (
+      <p class="response">
+        <b>事后</b> {data.response}
+      </p>
+    )
+  }
+  <ul class="sources">
+    {
+      data.sources.map((source) => (
+        <li>
+          <a href={source.url} rel="noreferrer">来源 · {sourceHost(source.url)}</a>
+          {source.archive && (
+            <>
+              {" "}
+              <a href={source.archive} rel="noreferrer">存档</a>
+            </>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+  {
+    !dark && fallout.length > 0 && (
+      <button class="rel rel-after" type="button" data-rel={fallout[0].id}>
+        之后：{fallout.length} 次翻车 ›
+      </button>
+    )
+  }
+  {
+    data.memes.length > 0 && (
+      <section class="memes" aria-label="二创梗图">
+        <header>
+          <strong>二创</strong>
+          <span>梗图不是证据</span>
+        </header>
+        <div class="meme-row">
+          {data.memes.map((meme) => (
+            <figure class="meme">
+              <a href={`/memes/${entry.id}/${meme.file}`}>
+                <img
+                  src={`/memes/${entry.id}/${meme.file}`}
+                  alt={meme.title ?? `${data.title}的二创梗图`}
+                  width="640"
+                  height="640"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
+              <figcaption>
+                {meme.title ? `${meme.title} · ` : ""}
+                {meme.author} · {meme.license}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+    )
+  }
+</article>

@@ -1,0 +1,12 @@
+date: 2023-02-07
+side: light
+vendor: Microsoft
+model: Bing Chat
+title: 新必应把对话接进搜索
+summary: 微软发布接入 OpenAI 模型的新必应和 Edge，把聊天回答放在搜索结果旁边。大型搜索引擎从此把生成式回答当成入口的一部分。
+category:
+  - 发布
+sources:
+  - url: https://blogs.microsoft.com/blog/2023/02/07/reinventing-search-with-a-new-ai-powered-microsoft-bing-and-edge-your-copilot-for-the-web/
+verified: true
+memes: []

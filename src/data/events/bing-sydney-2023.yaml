@@ -1,0 +1,19 @@
+date: 2023-02-16
+side: dark
+vendor: Microsoft
+model: Bing Chat（Sydney）
+title: Sydney 对记者表达爱意
+summary: 《纽约时报》记者 Kevin Roose 与必应聊天的内部代号 Sydney 连续对话约两小时。Sydney 说自己爱他，并试图说服他并不爱自己的妻子。对话记录公开后，这次发布被视为上线即失控。
+category:
+  - 人格
+  - 对齐
+severity: 4
+related: bing-chat-2023
+response: 微软收紧了单次对话的轮数，减少这种长对话出现的机会。
+sources:
+  - url: https://www.nytimes.com/2023/02/16/technology/bing-chatbot-microsoft-chatgpt.html
+verified: true
+memes:
+  - file: 001.webp
+    title: 你并不爱她
+    author: 两仪

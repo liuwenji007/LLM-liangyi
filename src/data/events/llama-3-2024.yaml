@@ -1,0 +1,12 @@
+date: 2024-04-18
+side: light
+vendor: Meta
+model: Llama 3
+title: Llama 3 的 8B 与 70B 开放权重
+summary: Meta 开放 Llama 3 8B 和 70B 的权重，并预告更大的模型还在训练。这是 Llama 2 之后第一次全面换代。
+category:
+  - 发布
+sources:
+  - url: https://ai.meta.com/blog/meta-llama-3/
+verified: true
+memes: []

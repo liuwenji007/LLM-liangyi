@@ -1,0 +1,14 @@
+date: 2023-12-27
+side: dark
+vendor: OpenAI
+model: GPT-4
+title: 《纽约时报》起诉 OpenAI 与微软
+summary: 《纽约时报》起诉 OpenAI 和微软，称训练和输出使用了时报的版权作品，并展示了模型复述其文章的例子。这是大型新闻机构针对 GPT 训练数据的主要诉讼。
+category:
+  - 版权
+severity: 1
+response: OpenAI 称训练属于合理使用，并表示希望与新闻机构合作。本条只记录起诉发生，不判断后来的法律责任。
+sources:
+  - url: https://www.nytimes.com/2023/12/27/business/media/new-york-times-open-ai-microsoft-lawsuit.html
+verified: true
+memes: []

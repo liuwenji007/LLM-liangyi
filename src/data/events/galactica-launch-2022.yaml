@@ -1,0 +1,13 @@
+date: 2022-11-15
+side: light
+vendor: Meta
+model: Galactica
+title: Galactica 公开演示上线
+summary: Meta AI 与 Papers with Code 发布面向科学文本的 Galactica，同时开放公开演示和模型权重，宣传它能总结论文、写维基条目和科学代码。
+category:
+  - 发布
+sources:
+  - url: https://arxiv.org/abs/2211.09085
+  - url: https://www.technologyreview.com/2022/11/18/1063487/meta-large-language-model-ai-only-survived-three-days-gpt-3-science/
+verified: true
+memes: []

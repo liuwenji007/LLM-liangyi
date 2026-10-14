@@ -1,0 +1,16 @@
+date: 2024-05-23
+side: dark
+vendor: Google
+model: AI Overviews
+title: 搜索概览建议往披萨上加胶水
+summary: Google 把 AI Overviews 推向美国用户后，有人贴出它建议用无毒胶水让芝士粘住披萨，以及每天吃一块石头。胶水那条可以追溯到一条多年前的玩笑评论。
+category:
+  - 幻觉
+severity: 4
+related: ai-overviews-launch-2024
+response: Google 称这些查询不常见，删掉了部分结果，并限制概览引用讽刺和无意义内容。
+sources:
+  - url: https://www.theverge.com/2024/5/23/24162896/google-ai-overview-hallucinations-glue-in-pizza
+  - url: https://www.bbc.com/news/articles/cd11gzejgz4o
+verified: true
+memes: []

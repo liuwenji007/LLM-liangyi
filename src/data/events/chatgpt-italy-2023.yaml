@@ -1,0 +1,17 @@
+date: 2023-03-31
+side: dark
+vendor: OpenAI
+model: ChatGPT
+title: 意大利限制 ChatGPT 处理用户数据
+summary: 意大利数据保护机构 Garante 紧急限制 ChatGPT 在当地处理个人数据，指出缺少向用户说明的法律依据，也没有核验年龄。这是主要监管机构第一次对 ChatGPT 按下暂停。
+category:
+  - 监管
+  - 隐私
+severity: 5
+related: chatgpt-2022
+response: OpenAI 按监管要求在意大利停用了 ChatGPT，并表示会补充隐私说明后再恢复。
+sources:
+  - url: https://www.garanteprivacy.it/home/docweb/-/docweb-display/docweb/9870847
+  - url: https://www.bbc.com/news/technology-65139406
+verified: true
+memes: []
