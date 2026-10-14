@@ -1,6 +1,6 @@
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  site: "https://liangyi.pages.dev",
+  site: "https://llmliangyi.com",
   compressHTML: true,
 });

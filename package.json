@@ -10,7 +10,8 @@
     "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
     "check": "ASTRO_TELEMETRY_DISABLED=1 astro check",
-    "draft": "tsx scripts/draft.ts"
+    "draft": "tsx scripts/draft.ts",
+    "deploy:server": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "astro": "^5.14.1",
