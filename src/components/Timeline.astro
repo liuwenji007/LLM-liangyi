@@ -1,5 +1,6 @@
 ---
 import type { YearGroup, TimelineNode as Node } from "../lib/events";
+import { ganzhi } from "../lib/events";
 import TimelineNode from "./TimelineNode.astro";
 
 interface Props {
@@ -24,7 +25,9 @@ function byMonth(nodes: Node[]) {
   {
     years.map(({ year, nodes }) => (
       <li class="year">
-        <h2>{year}</h2>
+        <h2>
+          <span class="gz">{ganzhi(year)}</span>{year}
+        </h2>
         <ol class="months">
           {byMonth(nodes).map(({ month, nodes: list }) => (
             <li class="month">

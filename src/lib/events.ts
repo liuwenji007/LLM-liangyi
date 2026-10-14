@@ -19,6 +19,10 @@ export function formatDate(date: Date): string {
   return isoDate(date).replaceAll("-", ".");
 }
 
+export function ganzhi(year: number): string {
+  return "甲乙丙丁戊己庚辛壬癸"[(year - 4) % 10] + "子丑寅卯辰巳午未申酉戌亥"[(year - 4) % 12];
+}
+
 export function isoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }

@@ -1,4 +1,5 @@
 ---
+import "lxgw-wenkai-screen-webfont/lxgwwenkaigbscreen.css";
 import "../styles/global.css";
 import { issueUrl } from "../config";
 import { buildTimeline, groupByYear } from "../lib/events";
@@ -61,10 +62,62 @@ const hasRepository = links.event.startsWith("http");
     </script>
   </head>
   <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <filter id="brush" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="3" seed="7" result="n"></feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" xChannelSelector="R" yChannelSelector="G"
+          ></feDisplacementMap>
+        </filter>
+        <linearGradient id="ridge" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="currentColor"></stop>
+          <stop offset="1" stop-color="currentColor" stop-opacity="0"></stop>
+        </linearGradient>
+        <symbol id="taiji" viewBox="0 0 100 100">
+          <g class="taiji-spin">
+            <g filter="url(#brush)">
+              <circle class="yang" cx="50" cy="50" r="45"></circle>
+              <path class="yin" d="M50 5a45 45 0 0 0 0 90 22.5 22.5 0 0 0 0-45 22.5 22.5 0 0 1 0-45z"></path>
+              <circle class="yin" cx="50" cy="27.5" r="6"></circle>
+              <circle class="yang" cx="50" cy="72.5" r="6"></circle>
+            </g>
+            <circle
+              class="enso"
+              cx="50"
+              cy="50"
+              r="49"
+              stroke-dasharray="268 40"
+              transform="rotate(-70 50 50)"
+              filter="url(#brush)"></circle>
+          </g>
+        </symbol>
+      </defs>
+    </svg>
+    <div class="sky" aria-hidden="true">
+      <svg viewBox="0 0 1600 400" preserveAspectRatio="xMidYMax slice">
+        <path
+          class="ridge-far"
+          fill="url(#ridge)"
+          d="M0 300C120 250 200 170 300 205S480 140 560 185 760 105 860 160 1060 225 1180 175 1400 95 1600 190V400H0Z"
+        ></path>
+        <path
+          class="ridge-mid"
+          fill="url(#ridge)"
+          d="M0 340C150 300 240 245 360 278S560 225 680 268 900 300 1020 248 1260 205 1380 258 1520 300 1600 280V400H0Z"
+        ></path>
+        <path
+          class="ridge-near"
+          fill="url(#ridge)"
+          d="M0 380C200 350 300 325 460 350S760 382 900 345 1200 318 1350 350 1550 372 1600 362V400H0Z"></path>
+      </svg>
+      <span class="cloud c1"></span>
+      <span class="cloud c2"></span>
+      <span class="cloud c3"></span>
+    </div>
     <div class="page">
       <header class="mast">
         <div>
-          <p class="eyebrow">LIANGYI</p>
+          <p class="eyebrow">易有太极 · 是生两仪</p>
           <h1>两仪</h1>
           <p class="lede">
             同一条时间线，<strong class="only-light">明史记发布与节点</strong><strong class="only-dark"
