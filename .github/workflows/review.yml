@@ -1,0 +1,65 @@
+name: AI 审查
+
+on:
+  pull_request:
+    paths:
+      - "src/data/events/**"
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: 要审查的事件编号，空格分开；留空审查全部
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: review-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # 来自 fork 的 PR 拿不到密钥，跳过
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: 审查改动的事件
+        if: github.event_name == 'pull_request'
+        run: pnpm review --changed origin/${{ github.base_ref }}
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+
+      - name: 审查指定或全部事件
+        if: github.event_name == 'workflow_dispatch'
+        run: pnpm review $IDS
+        env:
+          IDS: ${{ inputs.ids }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+
+      - run: cat reports/review/report.md >> "$GITHUB_STEP_SUMMARY"
+        if: always() && hashFiles('reports/review/report.md') != ''
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          header: ai-review
+          path: reports/review/report.md
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-review
+          path: reports/review/
+          if-no-files-found: ignore

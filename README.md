@@ -37,6 +37,15 @@ pnpm draft https://example.com/story
 
 脚本抓取标题和日期，向 archive.org 请求存档，并写出 `verified: false` 的 YAML。日期、厂商、摘要和严重程度都要人工再看一遍。
 
+## AI 审查
+
+```bash
+cp .env.example .env    # 填上 DEEPSEEK_API_KEY
+pnpm review             # 对照来源核查全部事件，报告在 reports/review/
+```
+
+PR 改动事件时会自动审查并在评论里贴报告。细节见 [CONTRIBUTING.md](CONTRIBUTING.md#ai-审查)。
+
 ## 投稿
 
 规则在 [CONTRIBUTING.md](CONTRIBUTING.md)。仓库里有三个 Issue 模板：投稿事件、投稿梗图、勘误与申诉。

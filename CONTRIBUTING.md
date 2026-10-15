@@ -62,6 +62,31 @@ related: gpt-4o-2024
 3. 维护者改写摘要、补上真实存在的存档链接，确认无误后把 `verified` 改成 `true`。没有可用的存档快照就不填 `archive`，不要按日期拼地址。
 4. 打开 PR。缺来源、字段类型不对或违反上面的规则时，构建会失败。
 
+## AI 审查
+
+维护者核对前，先让 DeepSeek 对照来源原文过一遍：日期是否一致、摘要里哪些句子在来源里找不到依据、严重程度是否符合标尺、`related` 对不对、有没有违反收录规则。结论分通过、存疑、不通过三档，维护者重点看后两档。
+
+AI 结论只作参考，`verified` 仍由维护者决定。
+
+- **PR**：改动 `src/data/events/` 的 PR 会自动审查，报告贴在 PR 评论里。需要在仓库 Settings → Secrets 里加 `DEEPSEEK_API_KEY`。
+- **全量**：在 Actions 页面手动运行「AI 审查」，可以填事件编号，留空审查全部。报告在运行摘要里，建议修改在 artifact 里。
+- **本地**：
+
+```bash
+cp .env.example .env          # 填上 DEEPSEEK_API_KEY
+pnpm review                   # 审查全部，报告在 reports/review/report.md
+pnpm review sky-voice-2024    # 只审查指定的几条
+pnpm review:apply sky-voice-2024   # 确认后把建议写进 YAML
+```
+
+国内网络抓不到 Google、BBC、Reuters 等来源，本地运行时走代理：
+
+```bash
+NODE_USE_ENV_PROXY=1 HTTPS_PROXY=http://127.0.0.1:7890 pnpm review
+```
+
+直连失败时，脚本会依次尝试 `archive` 存档和 r.jina.ai 阅读服务（设 `REVIEW_READER=off` 可关闭）。仍然抓不到的来源会标成「无法核对」，这一条至少是存疑。
+
 ## 梗图怎么入库
 
 1. 用 Issue 模板「投稿梗图」，把图片拖进正文。

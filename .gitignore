@@ -12,6 +12,9 @@ dist/
 !.env.example
 .deploy.env
 
+# AI 审查报告
+reports/
+
 # 证书与私钥
 *.key
 *.pem
