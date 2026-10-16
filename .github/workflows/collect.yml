@@ -1,0 +1,35 @@
+name: 主动收集
+
+on:
+  workflow_dispatch:
+    inputs:
+      window:
+        description: 时间窗，24h、7d 或 30d
+        required: false
+        default: "7d"
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm collect --window "$WINDOW"
+        env:
+          WINDOW: ${{ inputs.window }}
+      - run: cat reports/collect/candidates.md >> "$GITHUB_STEP_SUMMARY"
+        if: always() && hashFiles('reports/collect/candidates.md') != ''
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: collect-candidates
+          path: reports/collect/
+          if-no-files-found: ignore

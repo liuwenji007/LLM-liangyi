@@ -62,6 +62,18 @@ related: gpt-4o-2024
 3. 维护者改写摘要、补上真实存在的存档链接，确认无误后把 `verified` 改成 `true`。没有可用的存档快照就不填 `archive`，不要按日期拼地址。
 4. 打开 PR。缺来源、字段类型不对或违反上面的规则时，构建会失败。
 
+## 主动收集
+
+`pnpm collect` 扫描已审核信源：AIHOT 公开 API，以及 `src/data/sources.yaml` 里写了 `feed` 的 RSS。已在事件里出现过的链接会去掉。结果在 `reports/collect/candidates.md`，只是线索，不是已核实条目。
+
+```bash
+pnpm collect                 # 默认最近 7 天
+pnpm collect --window 24h
+pnpm collect --draft 3       # 对前 3 条新链接跑 draft
+```
+
+没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。国内访问外网不稳时，可在 Actions 里手动运行「主动收集」。
+
 ## AI 审查
 
 维护者核对前，先让 DeepSeek 对照来源原文过一遍：日期是否一致、摘要里哪些句子在来源里找不到依据、严重程度是否符合标尺、`related` 对不对、有没有违反收录规则。结论分通过、存疑、不通过三档，维护者重点看后两档。

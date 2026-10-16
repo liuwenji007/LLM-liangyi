@@ -1,0 +1,363 @@
+# 信源池（初始）
+# status: approved = 可进入常规巡视；pending = 待人工审核；rejected = 不用
+# tier: 1 一手原文 · 2 署名媒体 · 3 线索 / 聚合
+# kind: vendor | regulator | media | aggregator | archive | community
+# lane: chronicle = 服务编年 · fun = 服务乐子 · both = 两边都能用
+# feed: RSS/Atom，pnpm collect 会拉
+# collect: aihot = 走 AIHOT 公开 API（免 key）
+
+updated: 2026-10-16
+
+sources:
+  # ——— 厂商一手 ———
+  - id: openai-index
+    name: OpenAI News
+    url: https://openai.com/index/
+    feed: https://openai.com/news/rss.xml
+    tier: 1
+    kind: vendor
+    vendor: OpenAI
+    lang: en
+    lane: chronicle
+    status: approved
+    notes: 事故说明、模型发布、对齐博客多发于此
+
+  - id: anthropic-news
+    name: Anthropic News
+    url: https://www.anthropic.com/news
+    tier: 1
+    kind: vendor
+    vendor: Anthropic
+    lang: en
+    lane: chronicle
+    status: approved
+    notes: 含系统卡与安全披露入口
+
+  - id: google-deepmind-blog
+    name: Google DeepMind Blog
+    url: https://deepmind.google/discover/blog/
+    tier: 1
+    kind: vendor
+    vendor: Google
+    lang: en
+    lane: chronicle
+    status: approved
+
+  - id: google-keyword
+    name: Google Keyword
+    url: https://blog.google/
+    feed: https://blog.google/rss/
+    tier: 1
+    kind: vendor
+    vendor: Google
+    lang: en
+    lane: chronicle
+    status: approved
+    notes: 产品向发布（Bard / Gemini / AI Overviews）
+
+  - id: meta-ai-blog
+    name: Meta AI Blog
+    url: https://ai.meta.com/blog/
+    tier: 1
+    kind: vendor
+    vendor: Meta
+    lang: en
+    lane: chronicle
+    status: approved
+
+  - id: microsoft-ai-blog
+    name: Microsoft AI Blog
+    url: https://blogs.microsoft.com/ai/
+    tier: 1
+    kind: vendor
+    vendor: Microsoft
+    lang: en
+    lane: chronicle
+    status: approved
+
+  - id: deepseek-github
+    name: DeepSeek GitHub
+    url: https://github.com/deepseek-ai
+    tier: 1
+    kind: vendor
+    vendor: DeepSeek
+    lang: en
+    lane: chronicle
+    status: approved
+    notes: 权重与技术报告；官网动态较少时以此为准
+
+  - id: qwen-github
+    name: Qwen GitHub
+    url: https://github.com/QwenLM
+    tier: 1
+    kind: vendor
+    vendor: Qwen
+    lang: zh
+    lane: chronicle
+    status: approved
+
+  - id: zhipu-bigmodel
+    name: 智谱清言 / BigModel
+    url: https://www.zhipuai.cn/
+    tier: 1
+    kind: vendor
+    vendor: 智谱
+    lang: zh
+    lane: chronicle
+    status: pending
+    notes: 待确认稳定的新闻/博客入口 URL
+
+  - id: moonshot-blog
+    name: 月之暗面
+    url: https://www.moonshot.cn/
+    tier: 1
+    kind: vendor
+    vendor: Moonshot
+    lang: zh
+    lane: chronicle
+    status: pending
+    notes: 待确认公告栏目
+
+  - id: baidu-ernie
+    name: 文心一言
+    url: https://yiyan.baidu.com/
+    tier: 1
+    kind: vendor
+    vendor: 百度
+    lang: zh
+    lane: chronicle
+    status: pending
+
+  - id: bytedance-doubao
+    name: 豆包 / 火山方舟
+    url: https://www.volcengine.com/product/doubao
+    tier: 1
+    kind: vendor
+    vendor: 字节跳动
+    lang: zh
+    lane: chronicle
+    status: pending
+
+  # ——— 监管 / 法院 ———
+  - id: italy-garante
+    name: Garante per la protezione dei dati personali
+    url: https://www.gpdp.it/
+    tier: 1
+    kind: regulator
+    lang: it
+    lane: chronicle
+    status: approved
+    notes: ChatGPT / DeepSeek 限制令原文
+
+  - id: eu-ai-office
+    name: EU AI Office
+    url: https://digital-strategy.ec.europa.eu/en/policies/ai-office
+    tier: 1
+    kind: regulator
+    lang: en
+    lane: chronicle
+    status: approved
+
+  - id: us-ftc
+    name: U.S. FTC
+    url: https://www.ftc.gov/
+    tier: 1
+    kind: regulator
+    lang: en
+    lane: chronicle
+    status: approved
+
+  - id: cn-cac
+    name: 国家互联网信息办公室
+    url: https://www.cac.gov.cn/
+    tier: 1
+    kind: regulator
+    lang: zh
+    lane: chronicle
+    status: approved
+    notes: 生成式 AI 备案与通报
+
+  # ——— 署名媒体 ———
+  - id: mit-tr
+    name: MIT Technology Review
+    url: https://www.technologyreview.com/
+    feed: https://www.technologyreview.com/feed/
+    tier: 2
+    kind: media
+    lang: en
+    lane: both
+    status: approved
+
+  - id: reuters-tech
+    name: Reuters Technology
+    url: https://www.reuters.com/technology/
+    tier: 2
+    kind: media
+    lang: en
+    lane: chronicle
+    status: approved
+
+  - id: theverge
+    name: The Verge
+    url: https://www.theverge.com/
+    feed: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+    tier: 2
+    kind: media
+    lang: en
+    lane: both
+    status: approved
+
+  - id: wired
+    name: WIRED
+    url: https://www.wired.com/
+    tier: 2
+    kind: media
+    lang: en
+    lane: both
+    status: approved
+
+  - id: caixin
+    name: 财新
+    url: https://www.caixin.com/
+    tier: 2
+    kind: media
+    lang: zh
+    lane: chronicle
+    status: approved
+
+  - id: latepost
+    name: 晚点 LatePost
+    url: https://www.latepost.com/
+    tier: 2
+    kind: media
+    lang: zh
+    lane: both
+    status: approved
+
+  - id: geekpark
+    name: 极客公园
+    url: https://www.geekpark.net/
+    tier: 2
+    kind: media
+    lang: zh
+    lane: both
+    status: approved
+
+  - id: sspai
+    name: 少数派
+    url: https://sspai.com/
+    tier: 2
+    kind: media
+    lang: zh
+    lane: both
+    status: pending
+    notes: 偏产品评测，事故报道需逐条判断
+
+  # ——— 聚合 / 线索 ———
+  - id: aihot
+    name: AIHOT
+    url: https://aihot.news/
+    tier: 3
+    kind: aggregator
+    lang: zh
+    lane: both
+    status: approved
+    collect: aihot
+    notes: 免 key。只作发现，编年仍要追一手来源
+
+  - id: aiid
+    name: AI Incident Database
+    url: https://incidentdatabase.ai/
+    tier: 3
+    kind: aggregator
+    lang: en
+    lane: chronicle
+    status: approved
+    notes: 只作线索，入库仍要追一级来源
+
+  - id: aiaaic
+    name: AIAAIC
+    url: https://www.aiaaic.org/
+    tier: 3
+    kind: aggregator
+    lang: en
+    lane: chronicle
+    status: approved
+
+  - id: huggingface-blog
+    name: Hugging Face Blog
+    url: https://huggingface.co/blog
+    feed: https://huggingface.co/blog/feed.xml
+    tier: 2
+    kind: media
+    lang: en
+    lane: both
+    status: approved
+    notes: 开源模型发布与社区事件常先出现于此
+
+  # ——— 存档 ———
+  - id: archive-today
+    name: archive.ph
+    url: https://archive.ph/
+    tier: 1
+    kind: archive
+    lang: mul
+    lane: both
+    status: approved
+    notes: 补 sources[].archive 时优先
+
+  - id: wayback
+    name: Wayback Machine
+    url: https://web.archive.org/
+    tier: 1
+    kind: archive
+    lang: mul
+    lane: both
+    status: approved
+
+  # ——— 乐子线索（默认 pending，人工确认后再升） ———
+  - id: jike
+    name: 即刻
+    url: https://web.okjike.com/
+    tier: 3
+    kind: community
+    lang: zh
+    lane: fun
+    status: pending
+    notes: 发现用；不作编年唯一来源
+
+  - id: weibo
+    name: 微博
+    url: https://weibo.com/
+    tier: 3
+    kind: community
+    lang: zh
+    lane: fun
+    status: pending
+
+  - id: xiaohongshu
+    name: 小红书
+    url: https://www.xiaohongshu.com/
+    tier: 3
+    kind: community
+    lang: zh
+    lane: fun
+    status: pending
+
+  - id: v2ex
+    name: V2EX
+    url: https://www.v2ex.com/
+    tier: 3
+    kind: community
+    lang: zh
+    lane: fun
+    status: pending
+
+  - id: reddit-localllama
+    name: Reddit r/LocalLLaMA
+    url: https://www.reddit.com/r/LocalLLaMA/
+    tier: 3
+    kind: community
+    lang: en
+    lane: fun
+    status: pending
