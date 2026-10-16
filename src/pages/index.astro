@@ -59,6 +59,7 @@ const hasRepository = links.event.startsWith("http");
       let side = params.get("side") === "dark" ? "dark" : "light";
       if (!params.has("side") && sides[hash]) side = sides[hash];
       root.dataset.side = side;
+      if (side === "dark") root.style.setProperty("--taiji-flips", "1");
     </script>
   </head>
   <body>
@@ -178,6 +179,7 @@ const hasRepository = links.event.startsWith("http");
       </footer>
     </div>
     <SideToggle floating />
+    <nav class="minimap" id="minimap" aria-label="时间线定位" hidden></nav>
     <p class="sr-only" aria-live="polite" id="announce"></p>
     <script>
       import "../scripts/main.ts";

@@ -146,15 +146,16 @@ html[data-side="dark"] .only-light { display: none; }
 }
 .taiji {
   width: 7rem; height: 7rem; display: block; overflow: visible;
+  transform: rotate(calc(var(--taiji-flips, 0) * -180deg));
   transition: transform 600ms var(--ease);
   filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sky-top) 90%, transparent));
 }
-html[data-side="dark"] .taiji { transform: rotate(180deg); filter: drop-shadow(0 0 22px rgba(201, 168, 116, 0.12)); }
+html[data-side="dark"] .taiji { filter: drop-shadow(0 0 22px rgba(201, 168, 116, 0.12)); }
 .taiji-spin { transform-box: view-box; transform-origin: 50px 50px; animation: spin 90s linear infinite; }
 .yang { fill: #f6f4ec; }
 .yin { fill: #1c2420; }
 .enso { fill: none; stroke: var(--ink); stroke-width: 2.4; stroke-linecap: round; opacity: 0.55; }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin { to { transform: rotate(-360deg); } }
 .side-name { font-family: var(--kai); font-size: 1.1rem; letter-spacing: 0.4em; }
 .side-hint { font-family: var(--kai); font-size: 0.78rem; letter-spacing: 0.12em; color: var(--muted); }
 
@@ -170,6 +171,27 @@ html[data-side="dark"] .taiji { transform: rotate(180deg); filter: drop-shadow(0
 }
 .float-toggle.is-shown { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
 .float-toggle .taiji { width: 100%; height: 100%; filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.18)); }
+
+.minimap {
+  position: fixed; top: 50%; right: calc(0.55rem + env(safe-area-inset-right)); left: auto; z-index: 20;
+  display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 0.18rem;
+  height: min(64vh, 32rem); padding: 0.2rem; transform: translateY(-50%); pointer-events: none;
+}
+.minimap-tick {
+  display: block; flex: 1 1 0; width: 0.45rem; min-height: 1px; max-height: 3px;
+  padding: 0; border: 0; border-radius: 1px;
+  background: color-mix(in srgb, var(--ink) 38%, transparent);
+  cursor: pointer; pointer-events: auto;
+  transition: background 160ms var(--ease), width 160ms var(--ease), max-height 160ms var(--ease);
+}
+.minimap-tick.is-face { width: 0.7rem; background: color-mix(in srgb, var(--ink) 58%, transparent); }
+.minimap-tick.is-visible { background: color-mix(in srgb, var(--ink) 78%, transparent); }
+.minimap-tick.is-here { width: 1rem; max-height: 4px; background: var(--ink); }
+.minimap-tick:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
+html[data-side="dark"] .minimap-tick { background: color-mix(in srgb, var(--ink) 48%, transparent); }
+html[data-side="dark"] .minimap-tick.is-face { background: color-mix(in srgb, var(--ink) 68%, transparent); }
+html[data-side="dark"] .minimap-tick.is-visible { background: color-mix(in srgb, var(--ink) 86%, transparent); }
+html[data-side="dark"] .minimap-tick.is-here { background: var(--ink); }
 
 /* 筛选与统计 */
 .filters { display: flex; gap: 0.6rem; overflow-x: auto; padding: 1.25rem 0 0.25rem; scrollbar-width: none; }
@@ -374,10 +396,11 @@ html[data-side="dark"] .node[data-side="light"] .pip .dot {
   .node[data-side] .card::after { left: calc(var(--rail) / -2); right: auto; width: calc(var(--rail) / 2); }
   .card h3 { font-size: 1.22rem; }
   .float-toggle { right: calc(1rem + env(safe-area-inset-right)); bottom: calc(1rem + env(safe-area-inset-bottom)); }
+  .minimap { right: calc(0.3rem + env(safe-area-inset-right)); height: min(56vh, 26rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .taiji, .pip .dot, .float-toggle { transition: none; }
+  .taiji, .pip .dot, .float-toggle, .minimap-tick { transition: none; }
   .taiji-spin, .cloud { animation: none; }
   .peek, .node.is-target .card { animation: none; }
 }
@@ -444,6 +467,7 @@ html[data-side="dark"] .node[data-side="light"] .pip .dot {
 <button class="float-toggle" id="float-toggle" type="button" aria-pressed="false" aria-label="明暗切换">
   <svg class="taiji" viewBox="0 0 100 100" aria-hidden="true"><use href="#taiji" /></svg>
 </button>
+<nav class="minimap" id="minimap" aria-label="时间线定位" hidden></nav>
 <p class="sr-only" aria-live="polite" id="announce"></p>
 
 <script>
@@ -579,6 +603,85 @@ function syncToggles() {
   for (const t of toggles) t.setAttribute("aria-pressed", currentSide() === "dark" ? "true" : "false");
 }
 
+function syncTaiji(side = currentSide()) {
+  let flips = Number(root.style.getPropertyValue("--taiji-flips") || 0);
+  const wantOdd = side === "dark";
+  if ((flips % 2 === 1) !== wantOdd) flips += 1;
+  root.style.setProperty("--taiji-flips", String(flips));
+}
+
+/* ---------- 运行期：minimap ---------- */
+let minimapTicks = new Map();
+let minimapFrame = 0;
+
+function rebuildMinimap() {
+  const rootEl = document.getElementById("minimap");
+  rootEl.replaceChildren();
+  minimapTicks = new Map();
+  const list = nodes.filter((n) => !n.hidden);
+  rootEl.hidden = list.length === 0;
+  if (!list.length) return;
+  const frag = document.createDocumentFragment();
+  for (const node of list) {
+    const tick = document.createElement("button");
+    tick.type = "button";
+    tick.className = "minimap-tick";
+    tick.dataset.id = node.dataset.id;
+    tick.dataset.side = node.dataset.side;
+    const label = node.querySelector(".pip")?.getAttribute("aria-label") || node.dataset.id;
+    tick.title = label;
+    tick.setAttribute("aria-label", `跳到：${label}`);
+    frag.append(tick);
+    minimapTicks.set(node.dataset.id, tick);
+  }
+  rootEl.append(frag);
+  updateMinimap();
+}
+
+function updateMinimap() {
+  if (!minimapTicks.size) return;
+  const side = currentSide();
+  const mid = innerHeight / 2;
+  let bestId = "";
+  let bestGap = Infinity;
+  for (const node of nodes) {
+    if (node.hidden || node.offsetParent === null) continue;
+    const tick = minimapTicks.get(node.dataset.id);
+    if (!tick) continue;
+    tick.classList.toggle("is-face", tick.dataset.side === side);
+    const r = node.getBoundingClientRect();
+    tick.classList.toggle("is-visible", r.bottom > 0 && r.top < innerHeight);
+    const gap = Math.abs(r.top + r.height / 2 - mid);
+    if (gap < bestGap) { bestGap = gap; bestId = node.dataset.id; }
+  }
+  for (const [id, tick] of minimapTicks) tick.classList.toggle("is-here", id === bestId);
+}
+
+function onMinimapScroll() {
+  if (minimapFrame) return;
+  minimapFrame = requestAnimationFrame(() => { minimapFrame = 0; updateMinimap(); });
+}
+
+document.getElementById("minimap").addEventListener("click", (ev) => {
+  const tick = ev.target.closest(".minimap-tick");
+  if (!tick) return;
+  const node = nodeById.get(tick.dataset.id);
+  if (!node) return;
+  if (node.dataset.side !== currentSide()) {
+    flipTo(node.dataset.side, { origin: { x: innerWidth - 24, y: innerHeight / 2 }, targetId: node.dataset.id, fromId: node.dataset.id, push: true });
+    return;
+  }
+  centerNode(node);
+  node.classList.remove("is-target");
+  void node.offsetWidth;
+  node.classList.add("is-target");
+  setTimeout(() => node.classList.remove("is-target"), 1300);
+  updateMinimap();
+});
+addEventListener("scroll", onMinimapScroll, { passive: true });
+addEventListener("resize", onMinimapScroll, { passive: true });
+new MutationObserver(onMinimapScroll).observe(root, { attributes: true, attributeFilter: ["data-side"] });
+
 /* ---------- 运行期：filter ---------- */
 function applyFilter(next) {
   vendor = next;
@@ -593,6 +696,7 @@ function applyFilter(next) {
   }
   document.getElementById("empty").hidden = any;
   renderStats();
+  rebuildMinimap();
 }
 
 function renderStats() {
@@ -738,6 +842,7 @@ async function flipTo(side, { origin, targetId, fromId, push = false, freezeAt }
   const apply = () => {
     root.dataset.side = side;
     syncToggles();
+    syncTaiji(side);
     renderStats();
     if (target) {
       if (targetId) centerNode(target);
@@ -797,8 +902,10 @@ document.getElementById("timeline").addEventListener("click", (ev) => {
 addEventListener("popstate", (ev) => {
   closePeek();
   const params = new URLSearchParams(location.search);
-  root.dataset.side = params.get("side") === "dark" ? "dark" : "light";
+  const side = params.get("side") === "dark" ? "dark" : "light";
+  root.dataset.side = side;
   syncToggles();
+  syncTaiji(side);
   applyFilter(vendors.includes(params.get("vendor")) ? params.get("vendor") : "");
   const st = ev.state ?? {};
   const node = st.anchorId && nodeById.get(st.anchorId);
@@ -820,6 +927,7 @@ new IntersectionObserver(([entry]) => {
   let side = params.get("side") === "dark" ? "dark" : "light";
   if (hashNode && !params.has("side")) side = hashNode.dataset.side;
   root.dataset.side = side;
+  if (side === "dark") root.style.setProperty("--taiji-flips", "1");
   syncToggles();
   let v = vendors.includes(params.get("vendor")) ? params.get("vendor") : "";
   if (hashNode && v && hashNode.dataset.vendor !== v) v = "";

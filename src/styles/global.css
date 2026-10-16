@@ -210,12 +210,13 @@ html[data-side="dark"] .only-light { display: none; }
   width: 7rem;
   height: 7rem;
   overflow: visible;
+  /* 每次翻面累加 1，始终逆时针转半圈；奇数为暗、偶数为明 */
+  transform: rotate(calc(var(--taiji-flips, 0) * -180deg));
   transition: transform 600ms var(--ease);
   filter: drop-shadow(0 0 18px color-mix(in srgb, var(--sky-top) 90%, transparent));
 }
 
 html[data-side="dark"] .taiji {
-  transform: rotate(180deg);
   filter: drop-shadow(0 0 22px rgba(201, 168, 116, 0.12));
 }
 
@@ -239,7 +240,7 @@ html[data-side="dark"] .taiji {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to { transform: rotate(-360deg); }
 }
 
 .side-toggle > span { display: grid; justify-items: center; gap: 0.15rem; }
@@ -282,6 +283,75 @@ html[data-side="dark"] .taiji {
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.18));
+}
+
+/* 条目定位条：右侧；每条一划，当前面实、对面淡，视口中央加粗 */
+.minimap {
+  position: fixed;
+  top: 50%;
+  right: calc(0.55rem + env(safe-area-inset-right));
+  left: auto;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.18rem;
+  height: min(64vh, 32rem);
+  padding: 0.2rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.minimap-tick {
+  display: block;
+  flex: 1 1 0;
+  width: 0.45rem;
+  min-height: 1px;
+  max-height: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--ink) 38%, transparent);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 160ms var(--ease), width 160ms var(--ease), max-height 160ms var(--ease);
+}
+
+.minimap-tick.is-face {
+  width: 0.7rem;
+  background: color-mix(in srgb, var(--ink) 58%, transparent);
+}
+
+.minimap-tick.is-visible {
+  background: color-mix(in srgb, var(--ink) 78%, transparent);
+}
+
+.minimap-tick.is-here {
+  width: 1rem;
+  max-height: 4px;
+  background: var(--ink);
+}
+
+.minimap-tick:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+}
+
+html[data-side="dark"] .minimap-tick {
+  background: color-mix(in srgb, var(--ink) 48%, transparent);
+}
+
+html[data-side="dark"] .minimap-tick.is-face {
+  background: color-mix(in srgb, var(--ink) 68%, transparent);
+}
+
+html[data-side="dark"] .minimap-tick.is-visible {
+  background: color-mix(in srgb, var(--ink) 86%, transparent);
+}
+
+html[data-side="dark"] .minimap-tick.is-here {
+  background: var(--ink);
 }
 
 /* 筛选与统计 */
@@ -828,20 +898,26 @@ a { text-underline-offset: 0.18em; }
     right: calc(1rem + env(safe-area-inset-right));
     bottom: calc(1rem + env(safe-area-inset-bottom));
   }
+
+  .minimap {
+    right: calc(0.3rem + env(safe-area-inset-right));
+    height: min(56vh, 26rem);
+  }
 }
 
 /* 没有 JavaScript：两面的卡片全部展开，不显示点和太极 */
 html.no-js .node[data-side] .card { display: block; }
 
 html.no-js .node[data-side] :is(.pip, .ghost, .peek),
-html.no-js :is(.side-toggle, .float-toggle, .copy, .rel, .filters, .stats, .lede .hint) { display: none; }
+html.no-js :is(.side-toggle, .float-toggle, .minimap, .copy, .rel, .filters, .stats, .lede .hint) { display: none; }
 
 html.no-js .only-dark { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .taiji,
   .pip .dot,
-  .float-toggle { transition: none; }
+  .float-toggle,
+  .minimap-tick { transition: none; }
 
   .taiji-spin,
   .cloud { animation: none; }

@@ -1,6 +1,7 @@
 import { applyFilter } from "./filter";
 import { centerNode, initFlip, markTarget } from "./flip";
 import { initFloating } from "./floating";
+import { initMinimap } from "./minimap";
 import { closePeek, initPeek } from "./peek";
 import { currentSide, nodeById, readUrl, syncToggles, writeUrl } from "./state";
 
@@ -9,6 +10,7 @@ history.scrollRestoration = "manual";
 initPeek();
 initFlip();
 initFloating();
+initMinimap();
 syncToggles();
 
 const url = readUrl();

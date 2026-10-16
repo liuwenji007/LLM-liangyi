@@ -56,6 +56,14 @@ export function syncToggles() {
   for (const toggle of document.querySelectorAll("[data-toggle]")) toggle.setAttribute("aria-pressed", pressed);
 }
 
+/** 让太极方位与明/暗一致：不足则再逆时针转半圈（奇数=暗，偶数=明） */
+export function syncTaiji(side: Side = currentSide()) {
+  let flips = Number(root.style.getPropertyValue("--taiji-flips") || 0);
+  const wantOdd = side === "dark";
+  if ((flips % 2 === 1) !== wantOdd) flips += 1;
+  root.style.setProperty("--taiji-flips", String(flips));
+}
+
 export function reducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }

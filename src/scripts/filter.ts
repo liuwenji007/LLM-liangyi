@@ -2,6 +2,11 @@ import { currentSide, nodes, setVendor } from "./state";
 
 const stats = document.querySelector<HTMLElement>("#stats");
 const empty = document.querySelector<HTMLElement>("#empty");
+let filterListener: (() => void) | undefined;
+
+export function onFilterChange(listener: () => void) {
+  filterListener = listener;
+}
 
 export function applyFilter(vendor: string) {
   setVendor(vendor);
@@ -19,6 +24,7 @@ export function applyFilter(vendor: string) {
   }
   if (empty) empty.hidden = any;
   renderStats();
+  filterListener?.();
 }
 
 export function renderStats() {

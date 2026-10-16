@@ -8,6 +8,7 @@ import {
   reducedMotion,
   root,
   syncToggles,
+  syncTaiji,
   writeUrl,
   type HistoryState,
   type Side,
@@ -139,6 +140,7 @@ export async function flipTo(side: Side, { origin, targetId, fromId, push = fals
   const apply = () => {
     root.dataset.side = side;
     syncToggles();
+    syncTaiji(side);
     renderStats();
     if (target) {
       if (targetId) centerNode(target);
@@ -239,8 +241,10 @@ export function initFlip() {
   window.addEventListener("popstate", (event) => {
     closePeek();
     const url = readUrl();
-    root.dataset.side = url.side ?? "light";
+    const side = url.side ?? "light";
+    root.dataset.side = side;
     syncToggles();
+    syncTaiji(side);
     applyFilter(url.vendor);
     const state = (event.state ?? {}) as HistoryState;
     const node = state.anchorId ? nodeById.get(state.anchorId) : undefined;
