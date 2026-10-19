@@ -68,12 +68,14 @@ sources:
   - id: microsoft-ai-blog
     name: Microsoft AI Blog
     url: https://blogs.microsoft.com/ai/
+    feed: https://blogs.microsoft.com/feed/
     tier: 1
     kind: vendor
     vendor: Microsoft
     lang: en
     lane: chronicle
     status: approved
+    notes: /ai/feed 已失效，暂用公司博客总 RSS，粗分时丢掉非 AI 条目
 
   - id: deepseek-github
     name: DeepSeek GitHub
@@ -210,20 +212,24 @@ sources:
   - id: wired
     name: WIRED
     url: https://www.wired.com/
+    feed: https://www.wired.com/feed/rss
     tier: 2
     kind: media
     lang: en
     lane: both
     status: approved
+    notes: 全站 RSS，粗分时丢掉非 AI 条目
 
   - id: caixin
     name: 财新
     url: https://www.caixin.com/
+    feed: https://www.caixin.com/rss/rss_news.xml
     tier: 2
     kind: media
     lang: zh
     lane: chronicle
     status: approved
+    notes: 综合新闻 RSS，粗分时丢掉非 AI 条目
 
   - id: latepost
     name: 晚点 LatePost
@@ -237,6 +243,7 @@ sources:
   - id: geekpark
     name: 极客公园
     url: https://www.geekpark.net/
+    feed: https://www.geekpark.net/rss
     tier: 2
     kind: media
     lang: zh

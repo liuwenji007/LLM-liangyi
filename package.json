@@ -11,6 +11,7 @@
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
     "check": "ASTRO_TELEMETRY_DISABLED=1 astro check",
     "collect": "tsx scripts/collect.ts",
+    "triage": "tsx scripts/triage.ts",
     "draft": "tsx scripts/draft.ts",
     "review": "tsx scripts/review.ts",
     "review:apply": "tsx scripts/review.ts --apply",

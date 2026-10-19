@@ -25,6 +25,7 @@
 - 来源之间互相矛盾、又无法判断的说法。
 - 伪造的对话截图，或把梗图当成证据。
 - 针对某个员工、研究者或用户个人的攻击。模型和公司可以写，人不可以拿来开涮。
+- 人事八卦、梗图、纯舆论不进编年主轴。它们可以成为乐子候选，但 `verified` 仍由维护者决定，脚本不会自动上线。
 
 ## 严重程度
 
@@ -62,17 +63,31 @@ related: gpt-4o-2024
 3. 维护者改写摘要、补上真实存在的存档链接，确认无误后把 `verified` 改成 `true`。没有可用的存档快照就不填 `archive`，不要按日期拼地址。
 4. 打开 PR。缺来源、字段类型不对或违反上面的规则时，构建会失败。
 
-## 主动收集
+## 主动收集与排队
 
-`pnpm collect` 扫描已审核信源：AIHOT 公开 API，以及 `src/data/sources.yaml` 里写了 `feed` 的 RSS。已在事件里出现过的链接会去掉。结果在 `reports/collect/candidates.md`，只是线索，不是已核实条目。
+当前阶段先做「发现 → 排队 → 人工点头」，副轴 UI 和 `fun` 数据目录暂缓。
+
+`pnpm collect` 扫描已审核信源：AIHOT 公开 API，以及 `src/data/sources.yaml` 里写了 `feed` 的 RSS。已在事件里出现过的链接会去掉。结果在 `reports/collect/candidates.md`，只是线索。
+
+`pnpm triage` 用模型把线索分成编年、乐子、丢弃，并按限额开 GitHub Issue。编年每天最多 5 条，乐子每天最多 10 条。丢弃的只写进 `reports/collect/triage.md`。脚本不会把 `verified` 改成 `true`，也不会自动开 PR。
+
+标签（脚本会补建）：`候选/编年`、`候选/乐子`。
 
 ```bash
 pnpm collect                 # 默认最近 7 天
 pnpm collect --window 24h
-pnpm collect --draft 3       # 对前 3 条新链接跑 draft
+pnpm triage                  # 读 candidates.json，粗分并开 Issue
 ```
 
-没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。国内访问外网不稳时，可在 Actions 里手动运行「主动收集」。
+没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。Actions「主动收集」每天 UTC 01:00（北京时间约 9 点）跑最近 24 小时，也可以手动触发。需要仓库 Secret `DEEPSEEK_API_KEY`。
+
+### 每周处理
+
+1. 打开 Issues，筛 `候选/编年`，处理大约 3–5 条。
+2. 对要收的链接执行 `pnpm draft <链接>`，改写摘要和字段，`verified` 先保持 `false`，开 PR。
+3. 等「AI 审查」评论。确认后你再把 `verified` 改成 `true` 并合并。
+4. `候选/乐子` 可延后。其余候选关掉或留到下周。
+5. 勘误 Issue 只处理已经上线的条目，不代替入库质检。
 
 ## AI 审查
 

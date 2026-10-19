@@ -1,15 +1,18 @@
 name: 主动收集
 
 on:
+  schedule:
+    - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
       window:
-        description: 时间窗，24h、7d 或 30d
+        description: 时间窗，24h、7d 或 30d。定时运行固定为 24h
         required: false
         default: "7d"
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   collect:
@@ -24,8 +27,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm collect --window "$WINDOW"
         env:
-          WINDOW: ${{ inputs.window }}
-      - run: cat reports/collect/candidates.md >> "$GITHUB_STEP_SUMMARY"
+          WINDOW: ${{ github.event_name == 'schedule' && '24h' || inputs.window }}
+      - run: pnpm triage
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+      - run: |
+          cat reports/collect/candidates.md >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          cat reports/collect/triage.md >> "$GITHUB_STEP_SUMMARY"
         if: always() && hashFiles('reports/collect/candidates.md') != ''
       - uses: actions/upload-artifact@v4
         if: always()

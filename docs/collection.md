@@ -140,7 +140,8 @@
 
 | 步骤 | 现状 | 下一步 |
 |---|---|---|
-| 发现 | `pnpm collect` | 扫 AIHOT 和信源池里带 `feed` 的源，输出 `reports/collect/`；`--draft 3` 可对前几条起草 |
+| 发现 | `pnpm collect` | 扫 AIHOT 和信源池里带 `feed` 的源，输出 `reports/collect/` |
+| 排队 | `pnpm triage` | AI 粗分为编年 / 乐子 / 丢弃；编年每天最多 5 个 Issue，乐子最多 10 个。不改 `verified` |
 | 起草 | `pnpm draft <url>` | 识别信源是否在池内，自动填 `tier` / 建议 `lane` |
 | 模型核对 | `pnpm review` | 编年严查事实；乐子只查「是否人身攻击 / 是否明显伪造」 |
 | 人工复核 | 改 YAML + `verified` | 信源录入走 `sources.yaml` 的 pending → approved |
@@ -182,13 +183,21 @@
 
 ---
 
-## 7. 实施顺序（建议）
+## 7. 实施顺序
 
-1. ~~定稿框架 + 信源池 + 双轴关系~~（本阶段）
-2. `fun` collection + 副轴 UI（默认同滚、可关）+ 编年详情「相关乐子」
-3. 迁出 `events[].memes` → `fun/`；更新 CONTRIBUTING / design 措辞（明=宣称，暗=反馈）
-4. `draft` / `review` 读信源池；乐子审查分轨；信源 pending 录入
-5. 按信源池补编年（明面能力点、暗面反馈）与 archive
+一人维护时，先把发现结果变成可处理的队列。`fun` collection、副轴 UI、梗图迁徙暂缓，避免在还没有稳定质检节奏时扩展示层。
+
+1. ~~定稿框架 + 信源池 + 双轴关系~~
+2. **当前：收集排队。** 每天 `collect` → `triage` 粗分 → 限量开 Issue（编年 5、乐子 10）。`verified` 只能人工改。
+3. 按周处理 `候选/编年`：`draft` → review → 人工改 `verified` → 合并。
+4. 暂缓：`fun` collection、副轴 UI、编年详情里的梗图、`events[].memes` 迁出。
+5. 之后再按信源池补一手 `feed`，以及明面能力点、暗面反馈的正文。
+
+硬约束：
+
+- 自动产物一律是候选，禁止脚本或 CI 把 `verified` 改成 `true`。
+- 超出限额的线索只留在 `reports/collect/`。
+- 勘误是事后通道，不替代入库质检。
 
 ---
 
@@ -230,7 +239,7 @@
 | 判断 | 内容 |
 |---|---|
 | 可落实 | 双轴模型与现有明暗翻面**不冲突**；信源池与 review 流水线可并行 |
-| 下一刀工程 | 详情里看相关乐子 + `fun` 数据迁徙；副轴 UI 可第二步 |
+| 当前阶段 | 收集排队：定时 collect、triage 开候选 Issue、每周人工点头。fun UI 暂缓 |
 | 文档债 | 更新 `design.md` / `CONTRIBUTING.md`：梗图归乐子；明=宣称，暗=反馈 |
 
 **结论：方案可落实。** 原先 §8.1 的 A/B/C 作废，以「主轴干净 + 副轴乐子 + 详情看梗图」为准。
