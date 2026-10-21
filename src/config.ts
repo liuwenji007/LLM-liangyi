@@ -1,8 +1,7 @@
 /**
- * 换成真实 GitHub 仓库地址后，页面上的投稿链接会打开 Issue 表单。
- * 例：https://github.com/your-name/liangyi
+ * GitHub 仓库地址。页面上的投稿、勘误链接会打开对应 Issue 表单。
  */
-export const repositoryUrl: string = "";
+export const repositoryUrl: string = "https://github.com/liuwenji007/LLM-liangyi";
 
 export type IssueTemplate = "event.yml" | "meme.yml" | "correction.yml";
 

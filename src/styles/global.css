@@ -823,6 +823,10 @@ html[data-side="dark"] .node[data-side="light"] .pip .dot {
 
 .disclaimer { font-size: 0.8rem; }
 
+.beian { margin-top: 0.85rem; font-size: 0.78rem; }
+
+.beian a { color: var(--muted); }
+
 a { text-underline-offset: 0.18em; }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

@@ -2,12 +2,14 @@
 
 中文世界有出处的大模型翻车史，配上同一时期的发布作对照。
 
+线上地址：[https://llmliangyi.com](https://llmliangyi.com)
+
 一条时间线，两面。明史记发布与节点，暗史记翻车与事后。在明史里，暗史缩成时间轴上的暗点；在暗史里，明史缩成亮点。靠近一个点会露出一张小纸条，想看全貌就翻过去。点太极整体切换。
 
-## 地址
+## 地址参数
 
 ```text
-/?side=dark&vendor=OpenAI#gpt-4o-sycophancy-2025
+https://llmliangyi.com/?side=dark&vendor=OpenAI#gpt-4o-sycophancy-2025
 ```
 
 - `side=dark` 打开暗史，省略为明史。
@@ -48,17 +50,20 @@ PR 改动事件时会自动审查并在评论里贴报告。细节见 [CONTRIBUT
 
 ## 投稿
 
-规则在 [CONTRIBUTING.md](CONTRIBUTING.md)。仓库里有三个 Issue 模板：投稿事件、投稿梗图、勘误与申诉。
-
-把 `src/config.ts` 里的 `repositoryUrl` 改成实际仓库地址后，页面上的链接会打开对应模板。
+规则在 [CONTRIBUTING.md](CONTRIBUTING.md)。仓库里有三个 Issue 模板：投稿事件、投稿梗图、勘误与申诉。网站页脚的链接会直接打开对应表单。
 
 ## 部署
 
-构建产物在 `dist/`。分享卡片的图片是 `public/og.png`，地址按 `astro.config.mjs` 里的 `site` 拼成绝对地址，换域名时一起改。
+本站部署在腾讯云，域名 `llmliangyi.com`。本地发布：
 
-Cloudflare Pages：连接这个仓库，构建命令 `pnpm build`，输出目录 `dist`，Node 22。合并到主分支后自动发布。
+```bash
+# 在 .deploy.env 里写好 DEPLOY_HOST 和 DEPLOY_PATH（已被 git 忽略）
+pnpm deploy:server
+```
 
-Vercel：导入仓库即可。`vercel.json` 写了同样的构建命令和输出目录，框架选 Astro。
+构建产物在 `dist/`。分享卡片的图片是 `public/og.png`，绝对地址由 `astro.config.mjs` 里的 `site` 拼出。
+
+也可用 Cloudflare Pages 或 Vercel：构建命令 `pnpm build`，输出目录 `dist`，Node 22。
 
 ## 免责声明
 

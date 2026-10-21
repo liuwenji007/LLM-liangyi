@@ -1,1 +1,5 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
+contact_links:
+  - name: 打开网站
+    url: https://llmliangyi.com
+    about: 先在时间线上确认事件是否已经收录。
