@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { parse } from "yaml";
-import { createDraft, type DraftSide } from "./draft.js";
+import { createDraft, createManualDraft, type DraftSide } from "./draft.js";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -9,7 +9,8 @@ const EVENTS = "src/data/events";
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
 const repo = process.env.GITHUB_REPOSITORY;
 const event = loadEvent();
-const command = readCommand(event?.comment?.body ?? process.argv.slice(2).join(" "));
+const commentBody = event?.comment?.body ?? process.argv.slice(2).join("\n");
+const command = readCommand(commentBody);
 const allowed = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 
 if (!command) {
@@ -46,9 +47,11 @@ if (isFun(event.issue)) {
 }
 
 const parsed = parseIssue(event.issue.body ?? "", event.issue.title ?? "");
+const note = parseManualNote(commentBody);
 const side = command.side ?? parsed.side;
-if (!parsed.url) {
-  await comment(issue, "正文里没有 `source:` 链接，无法起草。");
+const url = note.url || parsed.url;
+if (!url) {
+  await comment(issue, "正文或评论里没有原文链接。在 Issue 里写 `source:`，或在 `/收` 下面写 `来源: https://...`。");
   process.exit(0);
 }
 if (!side) {
@@ -60,12 +63,14 @@ if (!side) {
       "再评论一次，写明面：",
       "- `/收 明` 或 `/收 明史`",
       "- `/收 暗` 或 `/收 暗史`",
+      "",
+      "官网拒抓时，在命令下面贴标题和摘要，卡片会用你写的内容，链接给读者看原文。",
     ].join("\n"),
   );
   process.exit(0);
 }
 
-const already = knownEvent(parsed.url);
+const already = knownEvent(url);
 if (already) {
   await comment(issue, `这个链接已经在 \`${already}\` 里。不要再起草一份。不需要就 \`/丢\`。`);
   process.exit(0);
@@ -80,15 +85,29 @@ if (existing) {
 
 let draft;
 try {
-  draft = await createDraft({
-    url: parsed.url,
-    side,
-    date: parsed.date,
-    title: parsed.title,
-  });
+  if (note.summary) {
+    draft = createManualDraft({
+      url,
+      side,
+      date: note.date ?? parsed.date,
+      title: note.title || parsed.title || "待补充标题",
+      summary: note.summary,
+      vendor: note.vendor,
+      model: note.model,
+      severity: note.severity,
+      response: note.response,
+    });
+  } else {
+    draft = await createDraft({
+      url,
+      side,
+      date: parsed.date,
+      title: parsed.title,
+    });
+  }
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  await comment(issue, `没有开 PR：${message}\n\n抓不到页面就先不要起草。可以稍后重试 \`/收\`，或本地 \`pnpm draft ${parsed.url}\`。`);
+  await comment(issue, blockedHint(message, url));
   process.exit(0);
 }
 
@@ -101,7 +120,7 @@ const check = runCheck();
 let pr: string;
 try {
   pushBranch(branch, draft.path, issue);
-  pr = createPr(branch, issue, draft, parsed.url);
+  pr = createPr(branch, issue, draft, url);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   await comment(
@@ -116,18 +135,23 @@ try {
   process.exit(1);
 }
 
-const review = runReview(draft.id);
+const review = draft.manual
+  ? "手写卡片，没有抓原文，跳过自动对照。请在 PR 里自己核对标题和摘要。"
+  : runReview(draft.id);
 const notes = [
   `已开草稿 PR：${pr}`,
   "",
   `- 事件：\`${draft.id}\``,
   `- 面：${draft.side === "dark" ? "暗史" : "明史"}`,
+  draft.manual ? "- 卡片用的是评论里的手写资料，原文链接只给读者点开。" : "",
   draft.side === "dark" ? "- 暗史还要补 `severity`。默认 token 开的 PR 不会跑 CI，合并前请在本机 `pnpm check`。" : "- 默认 token 开的 PR 不会跑 CI。合并前建议本机 `pnpm check`。",
   "- `verified` 仍是 false。核对完你在 PR 里改成 true 再合并。",
   check,
   "",
   "审查报告贴在 PR 里。",
-].join("\n");
+]
+  .filter(Boolean)
+  .join("\n");
 
 try {
   await comment(pr, `${review}\n\n${check}`);
@@ -178,6 +202,90 @@ function isFun(issue: NonNullable<IssueEvent["issue"]>): boolean {
   return /分级：\s*乐子/.test(issue.body ?? "");
 }
 
+type ManualNote = {
+  url?: string;
+  title?: string;
+  summary?: string;
+  vendor?: string;
+  model?: string;
+  date?: string;
+  severity?: number;
+  response?: string;
+};
+
+function parseManualNote(body: string): ManualNote {
+  const rest = body.replace(/\r\n/g, "\n").split("\n").slice(1);
+  const alias: Record<string, keyof ManualNote> = {
+    source: "url",
+    来源: "url",
+    url: "url",
+    链接: "url",
+    vendor: "vendor",
+    厂商: "vendor",
+    model: "model",
+    模型: "model",
+    date: "date",
+    日期: "date",
+    severity: "severity",
+    严重程度: "severity",
+    严重: "severity",
+    response: "response",
+    回应: "response",
+    事后: "response",
+  };
+
+  let index = 0;
+  while (index < rest.length && !rest[index].trim()) index += 1;
+
+  const fields: ManualNote = {};
+  while (index < rest.length) {
+    const match = /^([^\s:：]{1,16})\s*[:：]\s*(.+)$/.exec(rest[index].trim());
+    if (!match) break;
+    const key = alias[match[1].toLowerCase()] ?? alias[match[1]];
+    if (!key) break;
+    const value = match[2].trim();
+    if (key === "severity") {
+      const n = Number.parseInt(value, 10);
+      if (n >= 1 && n <= 5) fields.severity = n;
+    } else {
+      fields[key] = value;
+    }
+    index += 1;
+  }
+
+  while (index < rest.length && !rest[index].trim()) index += 1;
+  let end = rest.length;
+  while (end > index && !rest[end - 1].trim()) end -= 1;
+  const head = rest[index]?.trim();
+  const tail = rest.slice(index + 1, end).join("\n").trim();
+  if (tail) {
+    fields.title = head;
+    fields.summary = tail;
+  } else if (head) {
+    fields.summary = head;
+  }
+  return fields;
+}
+
+function blockedHint(message: string, url: string): string {
+  return [
+    `没有开 PR：${message}`,
+    "",
+    "官网拒抓时，不要改 Issue 链接。在评论里重新写一次，把卡片正文贴在命令下面：",
+    "",
+    "```",
+    "/收 暗",
+    "厂商: 待补充",
+    "模型: 待补充",
+    "",
+    "卡片标题",
+    "一两段摘要。卡片会用你写的内容，链接给读者看原文。",
+    "```",
+    "",
+    `原文仍是 ${url}`,
+  ].join("\n");
+}
+
 function parseIssue(body: string, title: string): { url?: string; side?: DraftSide; date?: string; title?: string } {
   const source = /^source:\s*(\S+)/m.exec(body)?.[1];
   const fallback = body.match(/https?:\/\/[^\s)>]+/)?.[0];
@@ -225,7 +333,7 @@ function pushBranch(branch: string, file: string, issue: number) {
   execFileSync("git", ["push", "-u", "origin", `HEAD:${branch}`, "--force"], { stdio: "inherit" });
 }
 
-function createPr(branch: string, issue: number, draft: { id: string; title: string; side: DraftSide }, url: string): string {
+function createPr(branch: string, issue: number, draft: { id: string; title: string; side: DraftSide; manual?: boolean }, url: string): string {
   const opened = existingPr(branch);
   if (opened) return opened;
   const body = [
@@ -233,7 +341,9 @@ function createPr(branch: string, issue: number, draft: { id: string; title: str
     "",
     `source: ${url}`,
     "",
-    "自动起草，`verified: false`。不要在未核对时改成 true。",
+    draft.manual
+      ? "卡片正文来自维护者评论，原文链接只给读者点开。`verified: false`。不要在未核对时改成 true。"
+      : "自动起草，`verified: false`。不要在未核对时改成 true。",
     draft.side === "dark" ? "暗史必须补 `severity`（1–5），必要时补 `related` / `response`。默认 token 开的 PR 不会跑 CI。" : "默认 token 开的 PR 不会跑 CI，合并前建议 `pnpm check`。",
     "",
     "维护者：改完摘要和字段，把 `verified` 改成 `true`，再合并。",

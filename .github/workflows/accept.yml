@@ -2,7 +2,7 @@ name: 收候选
 
 on:
   issue_comment:
-    types: [created]
+    types: [created, edited]
 
 permissions:
   contents: write

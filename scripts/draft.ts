@@ -10,6 +10,18 @@ export type DraftOptions = {
   title?: string;
 };
 
+export type ManualDraft = {
+  url: string;
+  side: DraftSide;
+  date?: string;
+  title: string;
+  summary: string;
+  vendor?: string;
+  model?: string;
+  severity?: number;
+  response?: string;
+};
+
 export type DraftResult = {
   path: string;
   id: string;
@@ -17,18 +29,32 @@ export type DraftResult = {
   date: string;
   side: DraftSide;
   archive?: string;
+  manual?: boolean;
 };
 
+export function createManualDraft(input: ManualDraft): DraftResult {
+  const target = needUrl(input.url);
+  const date = toDate(input.date ?? "") ?? new Date().toISOString().slice(0, 10);
+  const title = input.title.trim();
+  const summary = input.summary.trim();
+  if (!title || !summary) throw new Error("手写资料需要标题和摘要。");
+  return writeDraft({
+    url: target.href,
+    side: input.side,
+    date,
+    title,
+    summary,
+    vendor: input.vendor?.trim() || "待补充",
+    model: input.model?.trim() || "待补充",
+    severity: input.side === "dark" ? input.severity : undefined,
+    response: input.response?.trim(),
+    archive: undefined,
+    manual: true,
+  });
+}
+
 export async function createDraft({ url, side = "dark", date: hintDate, title: hintTitle }: DraftOptions): Promise<DraftResult> {
-  let target: URL;
-  try {
-    target = new URL(url);
-  } catch {
-    throw new Error("这不是一个有效链接。");
-  }
-  if (target.protocol !== "http:" && target.protocol !== "https:") {
-    throw new Error("只接受 http 或 https 链接。");
-  }
+  const target = needUrl(url);
 
   const page = await fetch(target, {
     headers: { "user-agent": "liangyi-draft/0.1" },
@@ -44,24 +70,65 @@ export async function createDraft({ url, side = "dark", date: hintDate, title: h
   const published = meta(html, "article:published_time") ?? meta(html, "pubdate") ?? "";
   const date = toDate(published) ?? toDate(hintDate ?? "") ?? new Date().toISOString().slice(0, 10);
   const archive = await saveArchive(target.href);
-  const id = uniqueSlug(target.hostname.replace(/^www\./, ""), date);
-  const path = `src/data/events/${id}.yaml`;
-  const draft = {
-    date,
+  return writeDraft({
+    url: target.href,
     side,
-    vendor: "待补充",
-    model: "待补充",
+    date,
     title,
     summary: published
       ? "待补充。脚本只抓到来源标题和发布日期，需要人工改写，并决定这是明史还是暗史。"
       : "待补充。脚本没有从来源里读到日期，当前日期是抓取当天，需要人工改正，并决定这是明史还是暗史。",
+    vendor: "待补充",
+    model: "待补充",
+    archive,
+  });
+}
+
+function needUrl(url: string): URL {
+  let target: URL;
+  try {
+    target = new URL(url);
+  } catch {
+    throw new Error("这不是一个有效链接。");
+  }
+  if (target.protocol !== "http:" && target.protocol !== "https:") {
+    throw new Error("只接受 http 或 https 链接。");
+  }
+  return target;
+}
+
+function writeDraft(input: {
+  url: string;
+  side: DraftSide;
+  date: string;
+  title: string;
+  summary: string;
+  vendor: string;
+  model: string;
+  severity?: number;
+  response?: string;
+  archive?: string;
+  manual?: boolean;
+}): DraftResult {
+  const host = new URL(input.url).hostname.replace(/^www\./, "");
+  const id = uniqueSlug(host, input.date);
+  const path = `src/data/events/${id}.yaml`;
+  const draft = {
+    date: input.date,
+    side: input.side,
+    vendor: input.vendor,
+    model: input.model,
+    title: input.title,
+    summary: input.summary,
     category: [] as string[],
-    sources: [{ url: target.href, ...(archive ? { archive } : {}) }],
+    ...(input.severity ? { severity: input.severity } : {}),
+    ...(input.response ? { response: input.response } : {}),
+    sources: [{ url: input.url, ...(input.archive ? { archive: input.archive } : {}) }],
     verified: false,
     memes: [] as [],
   };
   writeFileSync(path, stringify(draft, { lineWidth: 0 }));
-  return { path, id, title, date, side, archive };
+  return { path, id, title: input.title, date: input.date, side: input.side, archive: input.archive, manual: input.manual };
 }
 
 const invoked = process.argv[1]?.includes("draft.ts");
