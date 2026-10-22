@@ -1,63 +1,85 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { stringify } from "yaml";
 
-const input = process.argv[2];
+export type DraftSide = "light" | "dark";
 
-if (!input) {
-  console.error("用法: pnpm draft <url>");
-  process.exit(1);
-}
-
-let target: URL;
-try {
-  target = new URL(input);
-} catch {
-  console.error("这不是一个有效链接。");
-  process.exit(1);
-}
-
-if (target.protocol !== "http:" && target.protocol !== "https:") {
-  console.error("只接受 http 或 https 链接。");
-  process.exit(1);
-}
-
-const page = await fetch(target, {
-  headers: { "user-agent": "liangyi-draft/0.1" },
-  signal: AbortSignal.timeout(20000),
-  redirect: "follow",
-});
-
-if (!page.ok) {
-  console.error(`页面返回 ${page.status}，没有生成草稿。`);
-  process.exit(1);
-}
-
-const html = await page.text();
-const title = decode(meta(html, "og:title") ?? meta(html, "twitter:title") ?? tag(html, "title") ?? target.hostname);
-const published = meta(html, "article:published_time") ?? meta(html, "pubdate") ?? "";
-const date = toDate(published) ?? new Date().toISOString().slice(0, 10);
-const archive = await saveArchive(target.href);
-
-const slug = uniqueSlug(target.hostname.replace(/^www\./, ""), date);
-const draft = {
-  date,
-  side: "dark",
-  vendor: "待补充",
-  model: "待补充",
-  title,
-  summary: published
-    ? "待补充。脚本只抓到来源标题和发布日期，需要人工改写，并决定这是明史还是暗史。"
-    : "待补充。脚本没有从来源里读到日期，当前日期是抓取当天，需要人工改正，并决定这是明史还是暗史。",
-  category: [] as string[],
-  sources: [{ url: target.href, ...(archive ? { archive } : {}) }],
-  verified: false,
-  memes: [] as [],
+export type DraftOptions = {
+  url: string;
+  side?: DraftSide;
+  date?: string;
+  title?: string;
 };
 
-const path = `src/data/events/${slug}.yaml`;
-writeFileSync(path, stringify(draft, { lineWidth: 0 }));
-console.log(path);
-if (!archive) console.warn("archive.org 这次没有返回存档地址，草稿里只保留了原链接。");
+export type DraftResult = {
+  path: string;
+  id: string;
+  title: string;
+  date: string;
+  side: DraftSide;
+  archive?: string;
+};
+
+export async function createDraft({ url, side = "dark", date: hintDate, title: hintTitle }: DraftOptions): Promise<DraftResult> {
+  let target: URL;
+  try {
+    target = new URL(url);
+  } catch {
+    throw new Error("这不是一个有效链接。");
+  }
+  if (target.protocol !== "http:" && target.protocol !== "https:") {
+    throw new Error("只接受 http 或 https 链接。");
+  }
+
+  const page = await fetch(target, {
+    headers: { "user-agent": "liangyi-draft/0.1" },
+    signal: AbortSignal.timeout(20000),
+    redirect: "follow",
+  });
+  if (!page.ok) throw new Error(`页面返回 ${page.status}，没有生成草稿。`);
+
+  const html = await page.text();
+  const title =
+    hintTitle ||
+    decode(meta(html, "og:title") ?? meta(html, "twitter:title") ?? tag(html, "title") ?? target.hostname);
+  const published = meta(html, "article:published_time") ?? meta(html, "pubdate") ?? "";
+  const date = toDate(published) ?? toDate(hintDate ?? "") ?? new Date().toISOString().slice(0, 10);
+  const archive = await saveArchive(target.href);
+  const id = uniqueSlug(target.hostname.replace(/^www\./, ""), date);
+  const path = `src/data/events/${id}.yaml`;
+  const draft = {
+    date,
+    side,
+    vendor: "待补充",
+    model: "待补充",
+    title,
+    summary: published
+      ? "待补充。脚本只抓到来源标题和发布日期，需要人工改写，并决定这是明史还是暗史。"
+      : "待补充。脚本没有从来源里读到日期，当前日期是抓取当天，需要人工改正，并决定这是明史还是暗史。",
+    category: [] as string[],
+    sources: [{ url: target.href, ...(archive ? { archive } : {}) }],
+    verified: false,
+    memes: [] as [],
+  };
+  writeFileSync(path, stringify(draft, { lineWidth: 0 }));
+  return { path, id, title, date, side, archive };
+}
+
+const invoked = process.argv[1]?.includes("draft.ts");
+if (invoked) {
+  const input = process.argv[2];
+  if (!input) {
+    console.error("用法: pnpm draft <url>");
+    process.exit(1);
+  }
+  try {
+    const result = await createDraft({ url: input });
+    console.log(result.path);
+    if (!result.archive) console.warn("archive.org 这次没有返回存档地址，草稿里只保留了原链接。");
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
+}
 
 function meta(html: string, key: string): string | undefined {
   const pattern = new RegExp(

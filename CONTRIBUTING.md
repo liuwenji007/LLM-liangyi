@@ -69,7 +69,7 @@ related: gpt-4o-2024
 
 `pnpm collect` 扫描已审核信源：AIHOT 公开 API，以及 `src/data/sources.yaml` 里写了 `feed` 的 RSS。已在事件里出现过的链接会去掉。结果在 `reports/collect/candidates.md`，只是线索。
 
-`pnpm triage` 用模型把线索分成编年、乐子、丢弃，并按限额开 GitHub Issue。编年每天最多 5 条，乐子每天最多 10 条。丢弃的只写进 `reports/collect/triage.md`。脚本不会把 `verified` 改成 `true`，也不会自动开 PR。
+`pnpm triage` 用模型把线索分成编年、乐子、丢弃，并按限额开 GitHub Issue。编年每天最多 5 条，乐子每天最多 10 条。丢弃的只写进 `reports/collect/triage.md`。脚本不会把 `verified` 改成 `true`。维护者评论 `/收` 才会开草稿 PR。
 
 标签（脚本会补建）：`候选/编年`、`候选/乐子`。
 
@@ -84,10 +84,11 @@ pnpm triage                  # 读 candidates.json，粗分并开 Issue
 ### 每周处理
 
 1. 打开 Issues，筛 `候选/编年`，处理大约 3–5 条。
-2. 对要收的链接执行 `pnpm draft <链接>`，改写摘要和字段，`verified` 先保持 `false`，开 PR。
-3. 等「AI 审查」评论。确认后你再把 `verified` 改成 `true` 并合并。
-4. `候选/乐子` 可延后。其余候选关掉或留到下周。
-5. 勘误 Issue 只处理已经上线的条目，不代替入库质检。
+2. 要收：在候选 Issue 下评论 `/收`（仅维护者）。建议面是「待定」时必须写 `/收 明` 或 `/收 暗`，不会默认按暗史起草。Actions 抓原文、写 `verified: false` 的 YAML、开 PR，并在同一轮对照来源、跑 `pnpm check`。
+3. 链接已入库、抓不到页面、或已有草稿 PR 时只留言，不开第二份。git/gh 失败会回帖，可再 `/收` 重试（覆盖 `draft/issue-编号` 分支）。
+4. 默认 token 开的 PR **不会跑 CI**。暗史必须补 `severity`，合并前本机 `pnpm check`。确认后你把 `verified` 改成 `true` 再合并。PR 写了 `Closes #编号`，合并后 Issue 会关上。
+5. 不要收：在候选 Issue 评论 `/丢`。普通投稿/勘误帖上的 `/丢` 无效。`候选/乐子` 上 `/收` 会被拒绝。
+6. 本机仍可用 `pnpm draft <链接>`。勘误 Issue 只处理已经上线的条目。
 
 ## AI 审查
 
