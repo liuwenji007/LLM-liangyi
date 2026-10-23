@@ -142,7 +142,7 @@
 |---|---|---|
 | 发现 | `pnpm collect` | 扫 AIHOT 和信源池里带 `feed` 的源，输出 `reports/collect/` |
 | 排队 | `pnpm triage` | AI 粗分为编年 / 乐子 / 丢弃；编年每天最多 5 个 Issue，乐子最多 10 个。不改 `verified` |
-| 收 | Issue 评论 `/收` | 仅维护者。云端 `draft` 开 PR，同 job 跑 `review`。拒抓时可在评论里贴标题和摘要，卡片用手写正文，原文只作链接。`/丢` 关 Issue。不改 `verified` |
+| 收 | Issue 评论 `/收` | 仅维护者。云端 `draft` 开 PR，同 job 跑 `review`。摘要源或拒抓时，评论里写 `来源:` + 标题摘要；卡片用手写正文，并改写 Issue 的 `source:`。`/丢` 关 Issue。不改 `verified` |
 | 起草 | `pnpm draft <url>` | 识别信源是否在池内，自动填 `tier` / 建议 `lane` |
 | 模型核对 | `pnpm review` | 编年严查事实；乐子只查「是否人身攻击 / 是否明显伪造」 |
 | 人工复核 | 改 YAML + `verified` | 信源录入走 `sources.yaml` 的 pending → approved |
@@ -190,7 +190,7 @@
 
 1. ~~定稿框架 + 信源池 + 双轴关系~~
 2. **当前：收集排队。** 每天 `collect` → `triage` 粗分 → 限量开 Issue（编年 5、乐子 10）。`verified` 只能人工改。
-3. 按周处理 `候选/编年`：Issue 评论 `/收`（待定用 `/收 明` 或 `/收 暗`）→ 云端起草并开 PR（同 job 审查 + check）→ 人工改 `verified` → 合并。官网拒抓时在 `/收` 下贴标题和摘要，卡片用手写正文。`/丢` 只关候选 Issue。
+3. 按周处理 `候选/编年`：Issue 评论 `/收`（待定用 `/收 明` 或 `/收 暗`）→ 云端起草并开 PR（同 job 审查 + check）→ 人工改 `verified` → 合并。采集页只有摘要或官网拒抓时，在 `/收` 下写真站 `来源:` 和标题摘要。`/丢` 只关候选 Issue。
 4. 暂缓：`fun` collection、副轴 UI、编年详情里的梗图、`events[].memes` 迁出。
 5. 之后再按信源池补一手 `feed`，以及明面能力点、暗面反馈的正文。
 

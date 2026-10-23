@@ -50,8 +50,9 @@ const parsed = parseIssue(event.issue.body ?? "", event.issue.title ?? "");
 const note = parseManualNote(commentBody);
 const side = command.side ?? parsed.side;
 const url = note.url || parsed.url;
+const sourceChanged = Boolean(note.url && (!parsed.url || norm(note.url) !== norm(parsed.url)));
 if (!url) {
-  await comment(issue, "正文或评论里没有原文链接。在 Issue 里写 `source:`，或在 `/收` 下面写 `来源: https://...`。");
+  await comment(issue, "正文或评论里没有原文链接。采集页只是摘要时，在 `/收` 下面写 `来源: https://真站`。");
   process.exit(0);
 }
 if (!side) {
@@ -64,7 +65,7 @@ if (!side) {
       "- `/收 明` 或 `/收 明史`",
       "- `/收 暗` 或 `/收 暗史`",
       "",
-      "官网拒抓时，在命令下面贴标题和摘要，卡片会用你写的内容，链接给读者看原文。",
+      "采集页只有摘要、或官网拒抓时，在命令下面写 `来源: https://真站`，再贴标题和摘要。",
     ].join("\n"),
   );
   process.exit(0);
@@ -97,6 +98,24 @@ try {
       severity: note.severity,
       response: note.response,
     });
+  } else if (note.url) {
+    await comment(
+      issue,
+      [
+        "你改了原文链接，但没有贴卡片正文。真站常会拒抓，这里不会再去抓页面。",
+        "",
+        "再评论一次，把标题和摘要贴在命令下面：",
+        "",
+        "```",
+        `/收 ${side === "light" ? "明" : "暗"}`,
+        `来源: ${url}`,
+        "",
+        "卡片标题",
+        "一两段摘要。",
+        "```",
+      ].join("\n"),
+    );
+    process.exit(0);
   } else {
     draft = await createDraft({
       url,
@@ -111,6 +130,14 @@ try {
   process.exit(0);
 }
 
+if (sourceChanged) {
+  try {
+    await rewriteIssueSource(issue, event.issue.body ?? "", url);
+  } catch (error) {
+    console.warn("没能改写 Issue 的 source。", error);
+  }
+}
+
 if (!token || !repo) {
   console.log(draft.path);
   process.exit(0);
@@ -123,15 +150,7 @@ try {
   pr = createPr(branch, issue, draft, url);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  await comment(
-    issue,
-    [
-      `草稿文件写出来了，但没建成 PR：${message}`,
-      "",
-      `分支名：\`${branch}\``,
-      "可以再评论一次 `/收` 重试（会覆盖这条草稿分支）。",
-    ].join("\n"),
-  );
+  await comment(issue, prFailedHint(message, branch));
   process.exit(1);
 }
 
@@ -144,6 +163,7 @@ const notes = [
   `- 事件：\`${draft.id}\``,
   `- 面：${draft.side === "dark" ? "暗史" : "明史"}`,
   draft.manual ? "- 卡片用的是评论里的手写资料，原文链接只给读者点开。" : "",
+  sourceChanged ? `- 已把 Issue 的 \`source:\` 改成 ${url}` : "",
   draft.side === "dark" ? "- 暗史还要补 `severity`。默认 token 开的 PR 不会跑 CI，合并前请在本机 `pnpm check`。" : "- 默认 token 开的 PR 不会跑 CI。合并前建议本机 `pnpm check`。",
   "- `verified` 仍是 false。核对完你在 PR 里改成 true 再合并。",
   check,
@@ -239,7 +259,13 @@ function parseManualNote(body: string): ManualNote {
 
   const fields: ManualNote = {};
   while (index < rest.length) {
-    const match = /^([^\s:：]{1,16})\s*[:：]\s*(.+)$/.exec(rest[index].trim());
+    const line = rest[index].trim();
+    if (/^https?:\/\/\S+$/i.test(line)) {
+      fields.url ??= line;
+      index += 1;
+      continue;
+    }
+    const match = /^([^\s:：]{1,16})\s*[:：]\s*(.+)$/.exec(line);
     if (!match) break;
     const key = alias[match[1].toLowerCase()] ?? alias[match[1]];
     if (!key) break;
@@ -271,19 +297,43 @@ function blockedHint(message: string, url: string): string {
   return [
     `没有开 PR：${message}`,
     "",
-    "官网拒抓时，不要改 Issue 链接。在评论里重新写一次，把卡片正文贴在命令下面：",
+    "采集页只有摘要、或官网拒抓时，在评论里写真站链接和卡片正文：",
     "",
     "```",
     "/收 暗",
+    "来源: https://example.com/article",
     "厂商: 待补充",
-    "模型: 待补充",
     "",
     "卡片标题",
     "一两段摘要。卡片会用你写的内容，链接给读者看原文。",
     "```",
     "",
-    `原文仍是 ${url}`,
+    `当前会用的链接：${url}`,
   ].join("\n");
+}
+
+function prFailedHint(message: string, branch: string): string {
+  const reason = /GraphQL: .+/.exec(message)?.[0] ?? message.replace(/\s+/g, " ").slice(0, 280);
+  const compare = repo ? `https://github.com/${repo}/compare/main...${branch}?expand=1` : "";
+  const blocked = /not permitted to create or approve pull requests/i.test(message);
+  return [
+    `草稿文件已推到 \`${branch}\`，但没建成 PR：${reason}`,
+    "",
+    blocked
+      ? "仓库要勾选 Settings → Actions → General → Allow GitHub Actions to create and approve pull requests。"
+      : "可以再评论一次 `/收` 重试（会覆盖这条草稿分支）。",
+    compare ? `或点这里开 PR：${compare}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function rewriteIssueSource(number: number, body: string, url: string) {
+  const next = /^source:\s*\S+/m.test(body)
+    ? body.replace(/^source:\s*\S+/m, `source: ${url}`)
+    : `source: ${url}\n\n${body}`;
+  if (next === body) return;
+  await github(`/repos/${repo}/issues/${number}`, { method: "PATCH", body: JSON.stringify({ body: next }) });
 }
 
 function parseIssue(body: string, title: string): { url?: string; side?: DraftSide; date?: string; title?: string } {
