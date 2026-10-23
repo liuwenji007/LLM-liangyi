@@ -69,9 +69,9 @@ related: gpt-4o-2024
 
 `pnpm collect` 扫描已审核信源：AIHOT 公开 API，以及 `src/data/sources.yaml` 里写了 `feed` 的 RSS。已在事件里出现过的链接会去掉。结果在 `reports/collect/candidates.md`，只是线索。
 
-`pnpm triage` 用模型把线索分成编年、乐子、丢弃，并按限额开 GitHub Issue。编年每天最多 5 条，乐子每天最多 10 条。丢弃的只写进 `reports/collect/triage.md`。脚本不会把 `verified` 改成 `true`。维护者评论 `/收` 才会开草稿 PR。
+`pnpm triage` 用模型把线索分成编年、乐子、丢弃。编年每天最多开 5 个 Issue。乐子只写入 `reports/collect/triage.md`，不开 Issue。丢弃的同样只留在报告里。`collect` / `triage` / `draft` 不会把 `verified` 改成 `true`。维护者评论 `/收` 才会开草稿 PR。
 
-标签（脚本会补建）：`候选/编年`、`候选/乐子`。
+标签（脚本会补建）：`候选/编年`。`候选/乐子` 只留给以后的副轴，现在不再使用。
 
 ```bash
 pnpm collect                 # 默认最近 7 天
@@ -79,17 +79,18 @@ pnpm collect --window 24h
 pnpm triage                  # 读 candidates.json，粗分并开 Issue
 ```
 
-没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。Actions「主动收集」每天 UTC 01:00（北京时间约 9 点）跑最近 24 小时，也可以手动触发。需要仓库 Secret `DEEPSEEK_API_KEY`。
+没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。Actions「主动收集」每天 UTC 01:00（北京时间约 9 点）跑最近 7 天，也可以手动触发。编年每天仍只新开 5 条；没开成 Issue、且还在这 7 天里的，第二天会再排队。超过 7 天仍没开 Issue 的才不再出现。需要仓库 Secret `DEEPSEEK_API_KEY`。
 
 ### 每周处理
 
 1. 打开 Issues，筛 `候选/编年`，处理大约 3–5 条。
 2. 要收：在候选 Issue 下评论 `/收`（仅维护者）。建议面是「待定」时必须写 `/收 明` 或 `/收 暗`，不会默认按暗史起草。Actions 抓原文、写 `verified: false` 的 YAML、开 PR，并在同一轮对照来源、跑 `pnpm check`。
 3. 采集页只有摘要、或官网拒抓时，在 `/收` 下面写 `来源: https://真站`（也可单独贴一行 URL），再贴标题和摘要。只要评论里有正文或改了来源，就不会去抓页面。卡片用你写的正文，Issue 的 `source:` 会改成真站。只写 `/收`、不贴正文时才会抓 Issue 里的原链接。
-4. 链接已入库、抓不到页面且评论里没有手写摘要、或已有草稿 PR 时只留言，不开第二份。git/gh 失败会回帖，可再 `/收` 重试（覆盖 `draft/issue-编号` 分支）。
-5. 默认 token 开的 PR **不会跑 CI**。暗史必须补 `severity`，合并前本机 `pnpm check`。确认后你把 `verified` 改成 `true` 再合并。PR 写了 `Closes #编号`，合并后 Issue 会关上。
-6. 不要收：在候选 Issue 评论 `/丢`。普通投稿/勘误帖上的 `/丢` 无效。`候选/乐子` 上 `/收` 会被拒绝。
-7. 本机仍可用 `pnpm draft <链接>`。勘误 Issue 只处理已经上线的条目。
+4. 链接已入库，或抓不到页面且评论里没有手写摘要时，只留言，不开第二份。`/丢` 关掉的链接不会再开出来。已经有草稿时，新发一条 `/收` 会在原分支上更新标题、摘要和链接，并留下你补过的厂商、模型和严重程度。只编辑旧评论不会更新。
+5. 草稿 PR 会跑 CI。暗史必须补 `severity`。厂商、模型、标题、摘要还是「待补充」时，`/核实` 会拒绝。一次只核实一份事件。通过后才把 `verified` 改成 `true`，不合并不部署。然后你合并。PR 写了 `Closes #编号`，合并后 Issue 会关上。
+6. 合并不等于上线。拉下 `main` 后在本机执行 `pnpm deploy:server`。`verified: false` 的条目即使部署也不会出现在时间线上。
+7. 不要收：在候选 Issue 评论 `/丢`。普通投稿/勘误帖上的 `/丢` 无效。旧的 `候选/乐子` 上 `/收` 会被拒绝，新的收集不再开这类 Issue。
+8. 本机仍可用 `pnpm draft <链接>`。勘误 Issue 只处理已经上线的条目。
 
 ## AI 审查
 

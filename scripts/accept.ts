@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { parse } from "yaml";
+import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { parse, stringify } from "yaml";
+import { toDate } from "./date.js";
 import { createDraft, createManualDraft, type DraftSide } from "./draft.js";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -14,18 +15,32 @@ const command = readCommand(commentBody);
 const allowed = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
 
 if (!command) {
-  console.log("不是 /收 或 /丢，忽略。");
+  console.log("不是 /收、/丢 或 /核实，忽略。");
   process.exit(0);
 }
-if (!event?.issue || event.issue.pull_request) {
-  console.log("只处理 Issue 评论，不处理 PR。");
+if (!event?.issue) {
+  console.log("没有 Issue 或 PR。");
   process.exit(0);
 }
 
 const issue = event.issue.number;
 const association = event.comment?.author_association ?? "";
 if (!allowed.has(association)) {
-  await comment(issue, "只有维护者可以 `/收` 或 `/丢`。");
+  await comment(issue, "只有维护者可以 `/收`、`/丢` 或 `/核实`。");
+  process.exit(0);
+}
+
+if (event.issue.pull_request) {
+  if (command.action !== "核实") {
+    console.log("PR 上只接受 /核实。");
+    process.exit(0);
+  }
+  await verifyPull(issue);
+  process.exit(0);
+}
+
+if (command.action === "核实") {
+  await comment(issue, "`/核实` 写在草稿 PR 上，不写在这条 Issue 上。");
   process.exit(0);
 }
 
@@ -78,9 +93,9 @@ if (already) {
 }
 
 const branch = `draft/issue-${issue}`;
-const existing = existingPr(branch);
-if (existing) {
-  await comment(issue, `已经有草稿 PR：${existing}`);
+const updating = Boolean(existingPr(branch));
+if (updating && event.action === "edited") {
+  await comment(issue, "编辑原来的 `/收` 不会改草稿。要更新卡片，请新发一条 `/收`。");
   process.exit(0);
 }
 
@@ -146,7 +161,7 @@ if (!token || !repo) {
 const check = runCheck();
 let pr: string;
 try {
-  pushBranch(branch, draft.path, issue);
+  pushBranch(branch, draft.path, issue, updating);
   pr = createPr(branch, issue, draft, url);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
@@ -158,14 +173,15 @@ const review = draft.manual
   ? "手写卡片，没有抓原文，跳过自动对照。请在 PR 里自己核对标题和摘要。"
   : runReview(draft.id);
 const notes = [
-  `已开草稿 PR：${pr}`,
+  updating ? `已更新草稿 PR：${pr}` : `已开草稿 PR：${pr}`,
   "",
   `- 事件：\`${draft.id}\``,
   `- 面：${draft.side === "dark" ? "暗史" : "明史"}`,
   draft.manual ? "- 卡片用的是评论里的手写资料，原文链接只给读者点开。" : "",
   sourceChanged ? `- 已把 Issue 的 \`source:\` 改成 ${url}` : "",
-  draft.side === "dark" ? "- 暗史还要补 `severity`。默认 token 开的 PR 不会跑 CI，合并前请在本机 `pnpm check`。" : "- 默认 token 开的 PR 不会跑 CI。合并前建议本机 `pnpm check`。",
-  "- `verified` 仍是 false。核对完你在 PR 里改成 true 再合并。",
+  updating ? "- 已在原草稿上更新。你补过的厂商、模型、严重程度会留下；标题、摘要和链接用这条新评论。" : "",
+  draft.side === "dark" ? "- 暗史还要补 `severity`，否则 `/核实` 过不了检查。" : "",
+  "- `verified` 仍是 false。核对后在 PR 评论 `/核实`。合并不等于上线，还要本机 `pnpm deploy:server`。",
   check,
   "",
   "审查报告贴在 PR 里。",
@@ -182,6 +198,7 @@ await comment(issue, notes);
 console.log(pr);
 
 type IssueEvent = {
+  action?: string;
   comment?: { body?: string; author_association?: string };
   issue?: {
     number: number;
@@ -198,9 +215,10 @@ function loadEvent(): IssueEvent | undefined {
   return JSON.parse(readFileSync(path, "utf8")) as IssueEvent;
 }
 
-function readCommand(body: string): { action: "收"; side?: DraftSide } | { action: "丢" } | undefined {
+function readCommand(body: string): { action: "收"; side?: DraftSide } | { action: "丢" } | { action: "核实" } | undefined {
   const line = body.trim().split(/\r?\n/)[0]?.trim() ?? "";
   if (line === "/丢") return { action: "丢" };
+  if (line === "/核实") return { action: "核实" };
   const match = /^\/收(?:\s+(明史|暗史|明|暗))?$/.exec(line);
   if (!match) return undefined;
   const face = match[1];
@@ -340,7 +358,7 @@ function parseIssue(body: string, title: string): { url?: string; side?: DraftSi
   const source = /^source:\s*(\S+)/m.exec(body)?.[1];
   const fallback = body.match(/https?:\/\/[^\s)>]+/)?.[0];
   const face = /建议面：\s*(明史|暗史)/.exec(body)?.[1];
-  const date = /日期：\s*(\d{4}-\d{2}-\d{2})/.exec(body)?.[1];
+  const date = toDate(/日期：\s*(.+)/.exec(body)?.[1]?.trim() ?? "");
   const name = title.replace(/^候选：\s*/, "").trim();
   return {
     url: source || fallback,
@@ -374,13 +392,143 @@ function existingPr(branch: string): string | undefined {
   }
 }
 
-function pushBranch(branch: string, file: string, issue: number) {
+async function verifyPull(number: number) {
+  if (!repo) {
+    console.log("没有仓库地址。");
+    return;
+  }
+  try {
+    execFileSync("gh", ["pr", "checkout", String(number), "--repo", repo, "--force"], { stdio: "inherit" });
+  } catch (error) {
+    await comment(number, `没有检出 PR：${error instanceof Error ? error.message : error}`);
+    return;
+  }
+
+  const names = execFileSync("gh", ["api", "--paginate", `repos/${repo}/pulls/${number}/files`, "--jq", ".[].filename"], {
+    encoding: "utf8",
+  })
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("src/data/events/") && line.endsWith(".yaml"));
+  if (!names.length) {
+    await comment(number, "这个 PR 没有改 `src/data/events/`，没有可核实的条目。");
+    return;
+  }
+
+  if (names.length > 1) {
+    await comment(number, ["这个 PR 改了多份事件，`/核实` 不会一次全部打开。", "", ...names.map((file) => `- \`${file}\``)].join("\n"));
+    return;
+  }
+
+  const check = runCheck();
+  if (check.includes("未通过")) {
+    await comment(number, `${check}\n\n没有改 \`verified\`。先改 PR，再评论 \`/核实\`。`);
+    return;
+  }
+
+  const gaps = names.flatMap((file) => {
+    if (!existsSync(file)) return [`\`${file}\` 不在这个分支上`];
+    const gap = unfinished(readFileSync(file, "utf8"));
+    return gap ? [`\`${file}\`：${gap}`] : [];
+  });
+  if (gaps.length) {
+    await comment(number, ["没有改 `verified`。这些还是占位，不能当已核实：", "", ...gaps.map((line) => `- ${line}`)].join("\n"));
+    return;
+  }
+
+  const flipped: string[] = [];
+  for (const file of names) {
+    if (!existsSync(file)) continue;
+    const text = readFileSync(file, "utf8");
+    if (!/^verified:\s*false\s*$/m.test(text)) continue;
+    writeFileSync(file, text.replace(/^verified:\s*false\s*$/m, "verified: true"));
+    flipped.push(file);
+  }
+  if (!flipped.length) {
+    await comment(number, "这些条目已经是 `verified: true`，没有再改。");
+    return;
+  }
+
   execFileSync("git", ["config", "user.name", "github-actions[bot]"]);
   execFileSync("git", ["config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"]);
+  execFileSync("git", ["add", "--", ...flipped]);
+  execFileSync("git", ["commit", "-m", `核实候选 #${number}`]);
+  execFileSync("git", ["push", "-u", "origin", "HEAD"], { stdio: "inherit" });
+  await comment(
+    number,
+    ["已核实，可以合并。上线仍需本机 `pnpm deploy:server`。", "", ...flipped.map((file) => `- \`${file}\``), "", check].join("\n"),
+  );
+}
+
+function unfinished(text: string): string | undefined {
+  const data = parse(text) as { vendor?: string; model?: string; title?: string; summary?: string };
+  if (!data.vendor || data.vendor === "待补充") return "厂商仍是「待补充」。补上后再 `/核实`。";
+  if (!data.model || data.model === "待补充") return "模型仍是「待补充」。补上后再 `/核实`。";
+  if (!data.title || data.title.startsWith("待补充")) return "标题仍是待补充。改完后再 `/核实`。";
+  if (!data.summary || data.summary.startsWith("待补充")) return "摘要仍是待补充。改完后再 `/核实`。";
+  return undefined;
+}
+
+function pushBranch(branch: string, file: string, issue: number, updating: boolean) {
+  const fresh = readFileSync(file, "utf8");
+  execFileSync("git", ["config", "user.name", "github-actions[bot]"]);
+  execFileSync("git", ["config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"]);
+  if (updating) {
+    unlinkSync(file);
+    execFileSync("git", ["fetch", "origin", branch]);
+    execFileSync("git", ["checkout", "-f", "-B", branch, `origin/${branch}`]);
+    const added = addedEventFiles();
+    const priorPath = existsSync(file) ? file : added.find((name) => existsSync(name));
+    const prior = priorPath ? readFileSync(priorPath, "utf8") : undefined;
+    for (const old of added) {
+      if (old !== file) execFileSync("git", ["rm", "-f", "--", old]);
+    }
+    writeFileSync(file, keepFilledFields(prior, fresh));
+    execFileSync("git", ["add", "--", file]);
+    execFileSync("git", ["commit", "-m", `更新候选 #${issue}`]);
+    execFileSync("git", ["push", "-u", "origin", `HEAD:${branch}`], { stdio: "inherit" });
+    return;
+  }
   execFileSync("git", ["checkout", "-B", branch]);
   execFileSync("git", ["add", "--", file]);
   execFileSync("git", ["commit", "-m", `起草候选 #${issue}`]);
   execFileSync("git", ["push", "-u", "origin", `HEAD:${branch}`, "--force"], { stdio: "inherit" });
+}
+
+function addedEventFiles(): string[] {
+  for (const base of ["main", "origin/main"]) {
+    try {
+      return execFileSync("git", ["diff", "--name-only", "--diff-filter=A", base, "--", "src/data/events"], { encoding: "utf8" })
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.endsWith(".yaml"));
+    } catch {
+      continue;
+    }
+  }
+  return [];
+}
+
+function keepFilledFields(priorText: string | undefined, freshText: string): string {
+  if (!priorText) return freshText;
+  const prior = parse(priorText) as Record<string, unknown>;
+  const next = parse(freshText) as Record<string, unknown>;
+  for (const key of ["vendor", "model", "response", "category", "related"] as const) {
+    if (blank(next[key]) && !blank(prior[key])) next[key] = prior[key];
+  }
+  if (next.side === "light") {
+    delete next.severity;
+    delete next.related;
+  } else if (next.severity === undefined && typeof prior.severity === "number") {
+    next.severity = prior.severity;
+  }
+  next.verified = false;
+  return stringify(next, { lineWidth: 0 });
+}
+
+function blank(value: unknown): boolean {
+  if (value === undefined || value === null || value === "" || value === "待补充") return true;
+  return Array.isArray(value) && value.length === 0;
 }
 
 function createPr(branch: string, issue: number, draft: { id: string; title: string; side: DraftSide; manual?: boolean }, url: string): string {
@@ -394,9 +542,9 @@ function createPr(branch: string, issue: number, draft: { id: string; title: str
     draft.manual
       ? "卡片正文来自维护者评论，原文链接只给读者点开。`verified: false`。不要在未核对时改成 true。"
       : "自动起草，`verified: false`。不要在未核对时改成 true。",
-    draft.side === "dark" ? "暗史必须补 `severity`（1–5），必要时补 `related` / `response`。默认 token 开的 PR 不会跑 CI。" : "默认 token 开的 PR 不会跑 CI，合并前建议 `pnpm check`。",
+    draft.side === "dark" ? "暗史必须补 `severity`（1–5），必要时补 `related` / `response`。" : "",
     "",
-    "维护者：改完摘要和字段，把 `verified` 改成 `true`，再合并。",
+    "维护者：改完摘要和字段，在本 PR 评论 `/核实`。检查通过后才会把 `verified` 改成 true。合并不等于上线，还要本机 `pnpm deploy:server`。",
   ]
     .filter(Boolean)
     .join("\n");

@@ -141,8 +141,9 @@
 | 步骤 | 现状 | 下一步 |
 |---|---|---|
 | 发现 | `pnpm collect` | 扫 AIHOT 和信源池里带 `feed` 的源，输出 `reports/collect/` |
-| 排队 | `pnpm triage` | AI 粗分为编年 / 乐子 / 丢弃；编年每天最多 5 个 Issue，乐子最多 10 个。不改 `verified` |
-| 收 | Issue 评论 `/收` | 仅维护者。云端 `draft` 开 PR，同 job 跑 `review`。摘要源或拒抓时，评论里写 `来源:` + 标题摘要；卡片用手写正文，并改写 Issue 的 `source:`。`/丢` 关 Issue。不改 `verified` |
+| 排队 | `pnpm triage` | AI 粗分为编年 / 乐子 / 丢弃。编年每天最多 5 个 Issue。乐子只进报告，不开 Issue。不改 `verified` |
+| 收 | Issue 评论 `/收` | 仅维护者。云端起草并开 PR。已有草稿时新发一条 `/收` 才更新，并保留已补的厂商、模型和严重程度。编辑旧评论不会更新。`/丢` 关掉的链接不再开出来。不改 `verified` |
+| 核实 | PR 评论 `/核实` | 仅维护者。一次一份事件。厂商、模型、标题、摘要仍是「待补充」则拒绝。`pnpm check` 通过后把 `verified` 改成 true。不合并不部署 |
 | 起草 | `pnpm draft <url>` | 识别信源是否在池内，自动填 `tier` / 建议 `lane` |
 | 模型核对 | `pnpm review` | 编年严查事实；乐子只查「是否人身攻击 / 是否明显伪造」 |
 | 人工复核 | 改 YAML + `verified` | 信源录入走 `sources.yaml` 的 pending → approved |
@@ -189,15 +190,15 @@
 一人维护时，先把发现结果变成可处理的队列。`fun` collection、副轴 UI、梗图迁徙暂缓，避免在还没有稳定质检节奏时扩展示层。
 
 1. ~~定稿框架 + 信源池 + 双轴关系~~
-2. **当前：收集排队。** 每天 `collect` → `triage` 粗分 → 限量开 Issue（编年 5、乐子 10）。`verified` 只能人工改。
-3. 按周处理 `候选/编年`：Issue 评论 `/收`（待定用 `/收 明` 或 `/收 暗`）→ 云端起草并开 PR（同 job 审查 + check）→ 人工改 `verified` → 合并。采集页只有摘要或官网拒抓时，在 `/收` 下写真站 `来源:` 和标题摘要。`/丢` 只关候选 Issue。
+2. **当前：收集排队。** 每天 `collect`（最近 7 天）→ `triage` 粗分 → 编年每天新开最多 5 个 Issue。没开成、且还在 7 天窗里的，第二天再排队。乐子只留在报告里。`collect` / `triage` / `draft` 不改 `verified`。
+3. 按周处理 `候选/编年`：Issue 评论 `/收`（待定用 `/收 明` 或 `/收 暗`）→ 草稿 PR → 在 PR 评论 `/核实` → 合并 → 本机 `pnpm deploy:server`。已有草稿时新发一条 `/收` 才更新，编辑旧评论不会改。`/丢` 关掉的链接不再开出来。合并不等于上线；`verified: false` 即使部署也不出时间线。
 4. 暂缓：`fun` collection、副轴 UI、编年详情里的梗图、`events[].memes` 迁出。
 5. 之后再按信源池补一手 `feed`，以及明面能力点、暗面反馈的正文。
 
 硬约束：
 
-- 自动产物一律是候选，禁止脚本或 CI 把 `verified` 改成 `true`。
-- 超出限额的线索只留在 `reports/collect/`。
+- 自动产物一律是候选。`collect` / `triage` / `draft` 和普通 CI 不把 `verified` 改成 `true`。只有维护者在 PR 上评论 `/核实` 且检查通过才会改。
+- 超出当日编年限额、且还在 7 天收集窗里的线索，下次定时任务再排队。超过 7 天仍没开 Issue 的，只留在当次 `reports/collect/`。
 - 勘误是事后通道，不替代入库质检。
 
 ---

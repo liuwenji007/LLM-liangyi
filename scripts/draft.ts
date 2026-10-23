@@ -1,5 +1,6 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { stringify } from "yaml";
+import { toDate } from "./date.js";
 
 export type DraftSide = "light" | "dark";
 
@@ -170,11 +171,6 @@ function decode(value: string): string {
     .replace(/&gt;/g, ">")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function toDate(value: string): string | undefined {
-  const match = /(\d{4}-\d{2}-\d{2})/.exec(value);
-  return match?.[1];
 }
 
 async function saveArchive(url: string): Promise<string | undefined> {

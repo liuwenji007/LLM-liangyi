@@ -6,7 +6,6 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 const CANDIDATES = "reports/collect/candidates.json";
 const OUT = "reports/collect";
 const CHRONICLE_LIMIT = 5;
-const FUN_LIMIT = 10;
 const LABELS = {
   chronicle: "候选/编年",
   fun: "候选/乐子",
@@ -66,7 +65,9 @@ if (!token || !repo) {
   await ensureLabels(repo);
   const existing = await openIssueBodies(repo);
   await openLimited(repo, chronicle, "chronicle", CHRONICLE_LIMIT, existing, opened);
-  await openLimited(repo, fun, "fun", FUN_LIMIT, existing, opened);
+  for (const item of fun) {
+    opened.push({ lane: "fun", url: norm(item.url), skipped: "乐子赛道未落地，不开 Issue" });
+  }
 }
 
 mkdirSync(OUT, { recursive: true });
@@ -76,7 +77,7 @@ const report = {
   opened,
   held: {
     chronicle: chronicle.slice(CHRONICLE_LIMIT).map((item) => item.url),
-    fun: fun.slice(FUN_LIMIT).map((item) => item.url),
+    fun: fun.map((item) => item.url),
   },
   dropped: dropped.map((item) => ({ url: item.url, reason: marks.get(norm(item.url))?.reason ?? "未分类" })),
 };
@@ -140,7 +141,7 @@ async function openLimited(
   for (const item of list) {
     const url = norm(item.url);
     if (existing.has(url)) {
-      log.push({ lane, url, skipped: "已有 open Issue" });
+      log.push({ lane, url, skipped: "已有 Issue" });
       continue;
     }
     if (created >= limit) {
@@ -176,9 +177,10 @@ async function createIssue(repoName: string, item: Hit, lane: "chronicle" | "fun
         "",
         "下一步（维护者评论）：",
         "",
-        "- `/收`：建议面已是明/暗时，云端起草并开 PR",
+        "- `/收`：建议面已是明/暗时，云端起草并开 PR。已有草稿时请新发一条，编辑旧评论不会更新",
         "- `/收 明` 或 `/收 暗`：建议面待定时必须写明",
         "- 摘要源或官网拒抓：在 `/收` 下面写 `来源: https://真站`，再贴标题和摘要",
+        "- 草稿 PR 上评论 `/核实`：`pnpm check` 通过后把 `verified` 改成 true。不合并不部署",
         "- `/丢`：关闭这条候选",
         "",
         "本机也可以：",
@@ -211,7 +213,7 @@ async function ensureLabels(repoName: string) {
 async function openIssueBodies(repoName: string): Promise<Set<string>> {
   const urls = new Set<string>();
   for (let page = 1; page <= 10; page += 1) {
-    const list = (await github(`/repos/${repoName}/issues?state=open&per_page=100&page=${page}`)) as Issue[];
+    const list = (await github(`/repos/${repoName}/issues?state=all&per_page=100&page=${page}`)) as Issue[];
     if (!Array.isArray(list) || list.length === 0) break;
     for (const issue of list) {
       if (issue.pull_request || !issue.body) continue;
@@ -258,7 +260,8 @@ function render(chronicleList: Hit[], funList: Hit[], droppedList: Hit[]): strin
     "",
     `${new Date().toISOString()} · 编年 ${chronicleList.length} · 乐子 ${funList.length} · 丢弃 ${droppedList.length}`,
     "",
-    `开 Issue 上限：编年 ${CHRONICLE_LIMIT}，乐子 ${FUN_LIMIT}。超出的留在本报告。不会修改 verified。`,
+    `开 Issue 上限：编年 ${CHRONICLE_LIMIT}。乐子赛道未落地，不开 Issue，只留在本报告。`,
+    "超出编年限额、且仍在收集窗口内的，下次定时任务会再排队。不会修改 verified。",
     "「开」表示落在当日限额内；是否真的新建，以 triage.json 的 opened 为准。",
     "",
     "## 编年",
@@ -267,7 +270,9 @@ function render(chronicleList: Hit[], funList: Hit[], droppedList: Hit[]): strin
     "",
     "## 乐子",
     "",
-    ...section(funList, FUN_LIMIT),
+    "乐子赛道未落地，不开 Issue。",
+    "",
+    ...section(funList, 0),
     "",
     "## 丢弃",
     "",

@@ -16,8 +16,13 @@ concurrency:
 jobs:
   accept:
     if: |
-      github.event.issue.pull_request == null &&
-      (startsWith(github.event.comment.body, '/收') || startsWith(github.event.comment.body, '/丢'))
+      (
+        github.event.issue.pull_request == null &&
+        (startsWith(github.event.comment.body, '/收') || startsWith(github.event.comment.body, '/丢'))
+      ) || (
+        github.event.issue.pull_request != null &&
+        startsWith(github.event.comment.body, '/核实')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

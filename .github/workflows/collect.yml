@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       window:
-        description: 时间窗，24h、7d 或 30d。定时运行固定为 24h
+        description: 时间窗，24h、7d 或 30d。定时运行固定为 7d
         required: false
         default: "7d"
 
@@ -27,7 +27,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm collect --window "$WINDOW"
         env:
-          WINDOW: ${{ github.event_name == 'schedule' && '24h' || inputs.window }}
+          WINDOW: ${{ github.event_name == 'schedule' && '7d' || inputs.window }}
       - run: pnpm triage
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
