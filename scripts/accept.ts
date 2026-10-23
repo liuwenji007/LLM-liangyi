@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { parse, stringify } from "yaml";
 import { toDate } from "./date.js";
-import { createDraft, createManualDraft, type DraftSide } from "./draft.js";
+import { createDraft, createManualDraft, type DraftBasis, type DraftSide } from "./draft.js";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -99,6 +99,7 @@ if (updating && event.action === "edited") {
   process.exit(0);
 }
 
+const basis = note.basis ?? (updating ? undefined : side === "light" ? "official" : "independent");
 let draft;
 try {
   if (note.summary) {
@@ -112,6 +113,7 @@ try {
       model: note.model,
       severity: note.severity,
       response: note.response,
+      basis,
     });
   } else if (note.url) {
     await comment(
@@ -137,12 +139,24 @@ try {
       side,
       date: parsed.date,
       title: parsed.title,
+      basis,
     });
   }
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  await comment(issue, blockedHint(message, url));
-  process.exit(0);
+  if (!parsed.summary) {
+    await comment(issue, blockedHint(message, url));
+    process.exit(0);
+  }
+  draft = createManualDraft({
+    url,
+    side,
+    date: parsed.date,
+    title: parsed.title || "待补充标题",
+    summary: parsed.summary,
+    basis,
+    excerpt: true,
+  });
 }
 
 if (sourceChanged) {
@@ -172,12 +186,15 @@ try {
 const review = draft.manual
   ? "手写卡片，没有抓原文，跳过自动对照。请在 PR 里自己核对标题和摘要。"
   : runReview(draft.id);
+const basisLabel = draft.basis === "official" ? "官方宣布" : draft.basis === "independent" ? "第三方证实" : "";
 const notes = [
   updating ? `已更新草稿 PR：${pr}` : `已开草稿 PR：${pr}`,
   "",
   `- 事件：\`${draft.id}\``,
   `- 面：${draft.side === "dark" ? "暗史" : "明史"}`,
-  draft.manual ? "- 卡片用的是评论里的手写资料，原文链接只给读者点开。" : "",
+  basisLabel ? `- 依据：${basisLabel}。评论里写 \`依据: 官方\` 或 \`依据: 第三方\` 可以改。` : "",
+  draft.excerpt ? "- 官网没有打开。摘要用的是收集时带来的导语，卡片会标成上面的依据。" : "",
+  draft.manual && !draft.excerpt ? "- 卡片用的是评论里的手写资料，原文链接只给读者点开。" : "",
   sourceChanged ? `- 已把 Issue 的 \`source:\` 改成 ${url}` : "",
   updating ? "- 已在原草稿上更新。你补过的厂商、模型、严重程度会留下；标题、摘要和链接用这条新评论。" : "",
   draft.side === "dark" ? "- 暗史还要补 `severity`，否则 `/核实` 过不了检查。" : "",
@@ -249,6 +266,7 @@ type ManualNote = {
   date?: string;
   severity?: number;
   response?: string;
+  basis?: DraftBasis;
 };
 
 function parseManualNote(body: string): ManualNote {
@@ -270,6 +288,9 @@ function parseManualNote(body: string): ManualNote {
     response: "response",
     回应: "response",
     事后: "response",
+    basis: "basis",
+    依据: "basis",
+    证实: "basis",
   };
 
   let index = 0;
@@ -291,6 +312,8 @@ function parseManualNote(body: string): ManualNote {
     if (key === "severity") {
       const n = Number.parseInt(value, 10);
       if (n >= 1 && n <= 5) fields.severity = n;
+    } else if (key === "basis") {
+      fields.basis = readBasis(value);
     } else {
       fields[key] = value;
     }
@@ -354,17 +377,25 @@ async function rewriteIssueSource(number: number, body: string, url: string) {
   await github(`/repos/${repo}/issues/${number}`, { method: "PATCH", body: JSON.stringify({ body: next }) });
 }
 
-function parseIssue(body: string, title: string): { url?: string; side?: DraftSide; date?: string; title?: string } {
+function readBasis(value: string): DraftBasis | undefined {
+  if (/官方|official/i.test(value)) return "official";
+  if (/第三方|旁证|independent/i.test(value)) return "independent";
+  return undefined;
+}
+
+function parseIssue(body: string, title: string): { url?: string; side?: DraftSide; date?: string; title?: string; summary?: string } {
   const source = /^source:\s*(\S+)/m.exec(body)?.[1];
   const fallback = body.match(/https?:\/\/[^\s)>]+/)?.[0];
   const face = /建议面：\s*(明史|暗史)/.exec(body)?.[1];
   const date = toDate(/日期：\s*(.+)/.exec(body)?.[1]?.trim() ?? "");
+  const summary = /^- 摘要：\s*(.+)$/m.exec(body)?.[1]?.trim();
   const name = title.replace(/^候选：\s*/, "").trim();
   return {
     url: source || fallback,
     side: face === "明史" ? "light" : face === "暗史" ? "dark" : undefined,
     date,
     title: name || undefined,
+    summary: summary || undefined,
   };
 }
 
@@ -513,7 +544,7 @@ function keepFilledFields(priorText: string | undefined, freshText: string): str
   if (!priorText) return freshText;
   const prior = parse(priorText) as Record<string, unknown>;
   const next = parse(freshText) as Record<string, unknown>;
-  for (const key of ["vendor", "model", "response", "category", "related"] as const) {
+  for (const key of ["vendor", "model", "response", "category", "related", "basis"] as const) {
     if (blank(next[key]) && !blank(prior[key])) next[key] = prior[key];
   }
   if (next.side === "light") {

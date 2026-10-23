@@ -61,6 +61,7 @@
 | `side` | `light` | `dark` | 明=厂商宣称；暗=用户反馈/翻车 |
 | `vendor` / `model` | 必填 | 必填 | |
 | `title` / `summary` | 必填 | 必填 | 明史可写能力宣称（须有出处）；暗史写可核对事实 |
+| `basis` | `official` / `independent` | 同左 | 未填时明史和自披露显示「官方宣布」，其余暗史不显示。`official` 是官方宣布，`independent` 是第三方证实 |
 | `category` | 建议 | 建议 | 见 §3 |
 | `severity` | 禁止 | 必填 1–5 | |
 | `related` | 禁止 | 建议 | 暗→明的发布对照 |

@@ -46,6 +46,12 @@ export function relationText(model: string, days: number): string {
   return `${model} 发布后约 ${Math.round(days / 30.4)} 个月`;
 }
 
+export function basisLabel(side: "light" | "dark", basis: "official" | "independent" | undefined, category: string[]): string | undefined {
+  if (basis === "independent") return "第三方证实";
+  if (basis === "official" || side === "light" || category.includes("自披露")) return "官方宣布";
+  return undefined;
+}
+
 export function tagLabel(category: string): string | undefined {
   if (category === "误用") return "误用";
   if (category === "自披露") return "厂商自披露";

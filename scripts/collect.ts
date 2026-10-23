@@ -136,7 +136,7 @@ async function collectAihot(source: PoolSource): Promise<{ items: Hit[]; error?:
   }
 }
 
-function parseFeed(xml: string): { title: string; url: string; date: string }[] {
+function parseFeed(xml: string): { title: string; url: string; date: string; summary?: string }[] {
   return xml
     .split(/<item\b|<entry\b/i)
     .slice(1)
@@ -146,7 +146,8 @@ function parseFeed(xml: string): { title: string; url: string; date: string }[] 
       const bare = text(chunk, "link");
       const url = href || (bare.startsWith("http") ? bare : "");
       const date = text(chunk, "pubDate") || text(chunk, "updated") || text(chunk, "published");
-      return { title, url, date };
+      const summary = (text(chunk, "description") || text(chunk, "summary") || text(chunk, "content")).slice(0, 800);
+      return { title, url, date, summary: summary || undefined };
     })
     .filter((item) => item.url.startsWith("http") && item.title);
 }

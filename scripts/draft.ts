@@ -3,12 +3,14 @@ import { stringify } from "yaml";
 import { toDate } from "./date.js";
 
 export type DraftSide = "light" | "dark";
+export type DraftBasis = "official" | "independent";
 
 export type DraftOptions = {
   url: string;
   side?: DraftSide;
   date?: string;
   title?: string;
+  basis?: DraftBasis;
 };
 
 export type ManualDraft = {
@@ -21,6 +23,8 @@ export type ManualDraft = {
   model?: string;
   severity?: number;
   response?: string;
+  basis?: DraftBasis;
+  excerpt?: boolean;
 };
 
 export type DraftResult = {
@@ -31,6 +35,8 @@ export type DraftResult = {
   side: DraftSide;
   archive?: string;
   manual?: boolean;
+  excerpt?: boolean;
+  basis?: DraftBasis;
 };
 
 export function createManualDraft(input: ManualDraft): DraftResult {
@@ -49,12 +55,14 @@ export function createManualDraft(input: ManualDraft): DraftResult {
     model: input.model?.trim() || "待补充",
     severity: input.side === "dark" ? input.severity : undefined,
     response: input.response?.trim(),
+    basis: input.basis,
     archive: undefined,
     manual: true,
+    excerpt: input.excerpt,
   });
 }
 
-export async function createDraft({ url, side = "dark", date: hintDate, title: hintTitle }: DraftOptions): Promise<DraftResult> {
+export async function createDraft({ url, side = "dark", date: hintDate, title: hintTitle, basis }: DraftOptions): Promise<DraftResult> {
   const target = needUrl(url);
 
   const page = await fetch(target, {
@@ -81,6 +89,7 @@ export async function createDraft({ url, side = "dark", date: hintDate, title: h
       : "待补充。脚本没有从来源里读到日期，当前日期是抓取当天，需要人工改正，并决定这是明史还是暗史。",
     vendor: "待补充",
     model: "待补充",
+    basis,
     archive,
   });
 }
@@ -108,8 +117,10 @@ function writeDraft(input: {
   model: string;
   severity?: number;
   response?: string;
+  basis?: DraftBasis;
   archive?: string;
   manual?: boolean;
+  excerpt?: boolean;
 }): DraftResult {
   const host = new URL(input.url).hostname.replace(/^www\./, "");
   const id = uniqueSlug(host, input.date);
@@ -122,6 +133,7 @@ function writeDraft(input: {
     title: input.title,
     summary: input.summary,
     category: [] as string[],
+    ...(input.basis ? { basis: input.basis } : {}),
     ...(input.severity ? { severity: input.severity } : {}),
     ...(input.response ? { response: input.response } : {}),
     sources: [{ url: input.url, ...(input.archive ? { archive: input.archive } : {}) }],
@@ -129,7 +141,7 @@ function writeDraft(input: {
     memes: [] as [],
   };
   writeFileSync(path, stringify(draft, { lineWidth: 0 }));
-  return { path, id, title: input.title, date: input.date, side: input.side, archive: input.archive, manual: input.manual };
+  return { path, id, title: input.title, date: input.date, side: input.side, archive: input.archive, manual: input.manual, excerpt: input.excerpt, basis: input.basis };
 }
 
 const invoked = process.argv[1]?.includes("draft.ts");

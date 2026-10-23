@@ -823,7 +823,13 @@ html[data-side="dark"] .node[data-side="light"] .pip .dot {
 
 .disclaimer { font-size: 0.8rem; }
 
-.beian { margin-top: 0.85rem; font-size: 0.78rem; }
+.beian {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin-top: 0.85rem;
+  font-size: 0.78rem;
+}
 
 .beian a { color: var(--muted); }
 

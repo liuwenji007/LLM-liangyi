@@ -1,6 +1,6 @@
 ---
 import type { TimelineNode } from "../lib/events";
-import { formatDate, isoDate, relationText, sourceHost, tagLabel } from "../lib/events";
+import { basisLabel, formatDate, isoDate, relationText, sourceHost, tagLabel } from "../lib/events";
 import Severity from "./Severity.astro";
 
 interface Props {
@@ -11,6 +11,7 @@ const { node } = Astro.props;
 const { entry, parent, fallout } = node;
 const { data } = entry;
 const dark = data.side === "dark";
+const claim = basisLabel(data.side, data.basis, data.category);
 const tags = data.category.map(tagLabel).filter((label): label is string => Boolean(label));
 const plain = data.category.filter((category) => !tagLabel(category));
 ---
@@ -19,6 +20,7 @@ const plain = data.category.filter((category) => !tagLabel(category));
   <div class="card-top">
     <time datetime={isoDate(data.date)}>{formatDate(data.date)}</time>
     <span class="vendor">{data.vendor}</span>
+    {claim && <span class="tag">{claim}</span>}
     {tags.map((tag) => <span class="tag">{tag}</span>)}
     {plain.length > 0 && <span>{plain.join(" · ")}</span>}
     <button class="copy" type="button" data-copy={entry.id}>复制链接</button>

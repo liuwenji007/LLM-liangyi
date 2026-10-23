@@ -23,6 +23,7 @@ const events = defineCollection({
       model: z.string().min(1),
       title: z.string().min(1),
       summary: z.string().min(1),
+      basis: z.enum(["official", "independent"]).optional(),
       category: z.array(z.string()).default([]),
       severity: z.number().int().min(1).max(5).optional(),
       related: z.string().optional(),
