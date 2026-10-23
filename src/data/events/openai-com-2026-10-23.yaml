@@ -1,0 +1,11 @@
+date: 2026-10-23
+side: light
+vendor: OpenAI
+model: 待补充
+title: 官方声称：SentinelOne 借助 OpenAI Daybreak 将恶意软件分析从数周缩短至约 8 小时
+summary: 2026年10月14日，OpenAI 发布 SentinelOne 客户案例研究。SentinelOne 首席 AI 官 Gregor Stewart 表示，借助 OpenAI Daybreak，原本顶尖安全研究员需要 4–6 周完成的恶意软件逆向工程，现在约 8 小时即可产出达到人类水平的成果，使研究团队有余力调查更多威胁样本并发现跨样本关联。
+category: []
+sources:
+  - url: https://openai.com/index/sentinelone/
+verified: false
+memes: []
