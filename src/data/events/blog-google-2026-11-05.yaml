@@ -1,0 +1,14 @@
+date: 2026-11-05
+side: light
+vendor: Google
+model: Gemini Omni 1.2 Flash
+title: Gemini Omni 1.2 Flash 发布，支持 15 秒视频生成并降价 30%
+summary: Gemini Omni 1.2 Flash 正式发布，支持原生 15 秒视频生成与多轮对话编辑，价格较 1.1 版降低 30%。
+category:
+  - 发布
+  - 视频生成
+sources:
+  - url: https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemini-omni-1-2-flash
+verified: false
+memes: []
+basis: official
