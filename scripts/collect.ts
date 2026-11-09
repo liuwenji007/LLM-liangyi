@@ -33,12 +33,23 @@ type Hit = {
 const args = process.argv.slice(2);
 const windowArg = option("--window") ?? "7d";
 const draftN = Number(option("--draft") ?? "0");
-const windowMs = windowArg === "24h" ? 86_400_000 : windowArg === "30d" ? 30 * 86_400_000 : 7 * 86_400_000;
+const windowMs = parseWindow(windowArg);
 const since = Date.now() - windowMs;
 
 function option(name: string): string | undefined {
   const index = args.indexOf(name);
   return index >= 0 ? args[index + 1] : undefined;
+}
+
+/** `24h`、`8d`、`30d` 都认。以前只认 24h 和 30d，其余静默回落到 7 天。 */
+function parseWindow(value: string): number {
+  const match = /^(\d+)([hd])$/i.exec(value.trim());
+  if (!match) {
+    console.warn(`看不懂 --window ${value}，按 7d 处理`);
+    return 7 * 86_400_000;
+  }
+  const size = Number(match[1]);
+  return (match[2].toLowerCase() === "h" ? 3_600_000 : 86_400_000) * size;
 }
 
 const pool = (parse(readFileSync(SOURCES, "utf8")) as { sources: PoolSource[] }).sources.filter(
@@ -125,7 +136,7 @@ function loadKnown(): Set<string> {
 }
 
 async function collectAihot(source: PoolSource): Promise<{ items: Hit[]; error?: string }> {
-  const window = windowArg === "24h" ? "24h" : "7d";
+  const window = windowMs <= 86_400_000 ? "24h" : "7d";
   const items: Hit[] = [];
   let cursor = "";
   try {
