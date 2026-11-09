@@ -1,7 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
 import { loadPrefilter, matchPrefilter, type PrefilterHit } from "./lib/prefilter";
-import { fetchSource, loadPool, type Fetched } from "./lib/source-text";
+import { stringify } from "yaml";
+import { fetchSource, host, loadPool, type Fetched } from "./lib/source-text";
+import { createManualDraft } from "./draft";
 
 /**
  * 预审台：把开放的候选 Issue 压成一张能在一屏内点完的单子。
@@ -308,7 +310,150 @@ function renderOnly() {
   console.log(`重画完成：${OUT}/index.html`);
 }
 
+/**
+ * 把预审结果直接写成草稿并开 PR。
+ *
+ * 云端 accept 只能抓到标题和日期，厂商、型号、摘要会留成「待补充」，
+ * 等于把最贵的一项是让人再写一遍。这里用预审已经算好的字段填满，
+ * `verified` 仍然是 false，`/核实` 仍然是唯一能翻它的一步。
+ */
+async function draftFromQueue(numbers: number[]) {
+  const file = `${OUT}/queue.json`;
+  if (!existsSync(file)) throw new Error(`找不到 ${file}，先跑一次 pnpm queue。`);
+  if (!token) throw new Error("开 PR 需要 GITHUB_TOKEN。");
+  if (numbers.length === 0) throw new Error("用法：pnpm queue --draft <issue 号> [...]");
+
+  const saved = JSON.parse(readFileSync(file, "utf8")) as { rows: Row[] };
+  for (const number of numbers) {
+    const row = saved.rows.find((item) => item.number === number);
+    if (!row?.verdict) throw new Error(`队列里没有 #${number} 的预审结果。`);
+    const verdict = row.verdict;
+    const missing = [
+      verdict.decision !== "收" ? `判定是「${verdict.decision}」，不是「收」` : "",
+      !verdict.side ? "缺明暗" : "",
+      !verdict.vendor ? "缺厂商" : "",
+      !verdict.model ? "缺型号" : "",
+      !verdict.title_zh ? "缺中文标题" : "",
+      !verdict.summary_zh ? "缺中文摘要" : "",
+      verdict.side === "dark" && !verdict.severity ? "暗史缺严重程度" : "",
+    ].filter(Boolean);
+    if (missing.length > 0) throw new Error(`#${number} 不能开草稿：${missing.join("、")}`);
+
+    const branch = `draft/issue-${number}`;
+    const opened = await findPr(branch);
+    const force = args.includes("--force");
+    if (opened && !force) {
+      console.log(`#${number} 已有草稿 ${opened}（要覆盖加 --force）`);
+      continue;
+    }
+
+    const draft = createManualDraft({
+      url: row.url,
+      side: verdict.side!,
+      date: verdict.date ?? (row.collectedAt || new Date().toISOString().slice(0, 10)),
+      title: verdict.title_zh,
+      summary: verdict.summary_zh,
+      vendor: verdict.vendor,
+      model: verdict.model,
+      severity: verdict.side === "dark" ? verdict.severity ?? undefined : undefined,
+    });
+    // 预审分好的类目和信源性质，草稿阶段就带上，省得核实前再补一遍。
+    const doc = parse(readFileSync(draft.path, "utf8")) as Record<string, unknown>;
+    if (verdict.category.length > 0) doc.category = verdict.category;
+    const source = pool.find((item) => host(item.url) === host(row.url));
+    if (source?.kind === "vendor") doc.basis = "official";
+    else if (source) doc.basis = "independent";
+    writeFileSync(draft.path, stringify(doc, { lineWidth: 0 }));
+    const content = readFileSync(draft.path, "utf8");
+    const url = await pushDraft(branch, draft.path, content, number, draft.title, row.url, opened, force);
+    await comment(number, [
+      `已开草稿 PR：${url}`,
+      "",
+      `- 事件：\`${draft.id}\``,
+      `- 面：${verdict.side === "dark" ? "暗史" : "明史"}`,
+      `- 字段来自本地预审（依据 ${row.fetched.via === "direct" ? "全文" : "仅导语"}），\`verified\` 仍是 false。`,
+      confidenceNote(verdict),
+      "",
+      "改完在本 PR 评论 `/核实`。合并不等于上线，还要本机 `pnpm deploy:server`。",
+    ].filter(Boolean).join("\n"));
+    console.log(`#${number} → ${url}`);
+  }
+}
+
+function confidenceNote(verdict: Verdict): string {
+  return verdict.confidence === "低" ? "- 这份预审把握是「低」（只有导语或抓取不全），摘要要重点核对。" : "";
+}
+
+async function github(path: string, method: string, body?: unknown): Promise<{ status: number; data: any }> {
+  const response = await fetch(`https://api.github.com${path}`, {
+    method,
+    headers: {
+      accept: "application/vnd.github+json",
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+      "user-agent": "liangyi-precheck/0.1",
+      "x-github-api-version": "2022-11-28",
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    signal: AbortSignal.timeout(60000),
+  });
+  if (!response.ok) throw new Error(`GitHub ${method} ${path} → ${response.status}：${(await response.text()).slice(0, 200)}`);
+  return { status: response.status, data: response.status === 204 ? null : await response.json() };
+}
+
+async function findPr(branch: string): Promise<string | undefined> {
+  const owner = repo.split("/")[0];
+  const { data } = await github(`/repos/${repo}/pulls?head=${owner}:${encodeURIComponent(branch)}&state=open`, "GET");
+  return Array.isArray(data) && data.length > 0 ? (data[0].html_url as string) : undefined;
+}
+
+async function pushDraft(branch: string, path: string, content: string, issue: number, title: string, source: string, opened?: string, force = false): Promise<string> {
+  const { data: ref } = await github(`/repos/${repo}/git/ref/heads/main`, "GET");
+  const mainSha = ref.object.sha as string;
+  const blob = await github(`/repos/${repo}/git/blobs`, "POST", { content, encoding: "utf8" });
+  const { data: base } = await github(`/repos/${repo}/git/commits/${mainSha}`, "GET");
+  const tree = await github(`/repos/${repo}/git/trees`, "POST", {
+    base_tree: base.tree.sha,
+    tree: [{ path, mode: "100644", type: "blob", sha: blob.data.sha }],
+  });
+  const commit = await github(`/repos/${repo}/git/commits`, "POST", {
+    message: `起草 #${issue}：${title}`,
+    tree: tree.data.sha,
+    parents: [mainSha],
+  });
+  if (force) {
+    await github(`/repos/${repo}/git/refs/heads/${branch}`, "PATCH", { sha: commit.data.sha, force: true });
+    if (opened) return opened;
+  } else {
+    await github(`/repos/${repo}/git/refs`, "POST", { ref: `refs/heads/${branch}`, sha: commit.data.sha });
+  }
+  const pr = await github(`/repos/${repo}/pulls`, "POST", {
+    title: `起草：${title}`.slice(0, 80),
+    head: branch,
+    base: "main",
+    body: [
+      `Closes #${issue}`,
+      "",
+      `source: ${source}`,
+      "",
+      "字段来自本地预审（`pnpm queue --draft`），`verified: false`。不要在未核对时改成 true。",
+      "维护者：改完摘要和字段，在本 PR 评论 `/核实`。合并不等于上线，还要本机 `pnpm deploy:server`。",
+    ].join("\n"),
+  });
+  return pr.data.html_url as string;
+}
+
+async function comment(issue: number, body: string) {
+  await github(`/repos/${repo}/issues/${issue}/comments`, "POST", { body });
+}
+
 async function main() {
+  const draftIndex = args.indexOf("--draft");
+  if (draftIndex >= 0) {
+    const numbers = args.slice(draftIndex + 1).filter((arg) => /^\d+$/.test(arg)).map(Number);
+    await draftFromQueue(numbers);
+    return;
+  }
   if (args.includes("--render-only")) {
     renderOnly();
     return;

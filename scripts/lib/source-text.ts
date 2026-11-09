@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
 
-type PoolSource = { id: string; name?: string; url: string; feed?: string; status?: string };
+type PoolSource = { id: string; name?: string; url: string; feed?: string; status?: string; kind?: string };
 type FeedItem = { title: string; url: string; date: string; summary: string };
 type FeedCache = Record<string, { at: number; items: FeedItem[] }>;
 
