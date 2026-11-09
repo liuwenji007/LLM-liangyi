@@ -71,7 +71,7 @@ related: gpt-4o-2024
 
 `pnpm collect` 扫描已审核信源：AIHOT 公开 API，以及 `src/data/sources.yaml` 里写了 `feed` 的 RSS。已在事件里出现过的链接会去掉。结果在 `reports/collect/candidates.md`，只是线索。
 
-`pnpm triage` 用模型把线索分成编年、乐子、丢弃。编年每天最多开 5 个 Issue。乐子只写入 `reports/collect/triage.md`，不开 Issue。丢弃的同样只留在报告里。`collect` / `triage` / `draft` 不会把 `verified` 改成 `true`。维护者评论 `/收` 才会开草稿 PR。
+`pnpm triage` 用模型把线索分成编年、乐子、丢弃。编年每次最多开 2 个 Issue。乐子只写入 `reports/collect/triage.md`，不开 Issue。丢弃的同样只留在报告里。`collect` / `triage` / `draft` 不会把 `verified` 改成 `true`。维护者评论 `/收` 才会开草稿 PR。
 
 标签（脚本会补建）：`候选/编年`。`候选/乐子` 只留给以后的副轴，现在不再使用。
 
@@ -81,11 +81,15 @@ pnpm collect --window 24h
 pnpm triage                  # 读 candidates.json，粗分并开 Issue
 ```
 
-没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。Actions「主动收集」每天 UTC 01:00（北京时间约 9 点）跑最近 7 天，也可以手动触发。编年每天仍只新开 5 条；没开成 Issue、且还在这 7 天里的，第二天会再排队。超过 7 天仍没开 Issue 的才不再出现。需要仓库 Secret `DEEPSEEK_API_KEY`。
+没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。Actions「主动收集」每周一 UTC 01:00（北京时间约 9 点）跑最近 8 天，也可以手动触发。编年每次仍只新开 2 条；没开成 Issue、且还在窗口里的，下次会再排队。
+
+### 采集节奏
+
+日更管道服务不了一个一年只发几十条的产品：每天 5 条候选会在两周内堆出一百多条没人处理的队列。所以采集按周跑，`triage` 每次只开 2 条，剩下的靠 `precheck` 在本地筛。要提高产量就加高质量条目，不要加采集频率。需要仓库 Secret `DEEPSEEK_API_KEY`。
 
 ### 规则前置过滤
 
-`src/data/prefilter.yaml` 在 `collect` 与 `triage` 之间砍掉一眼不该进编年的线索：客户案例、教育公益资助、数据中心投资、人事与并购、月度汇总。命中的不进 `triage`、不占当日 5 条限额，明细写在 `reports/collect/candidates.md` 的「规则丢弃」一节。
+`src/data/prefilter.yaml` 在 `collect` 与 `triage` 之间砍掉一眼不该进编年的线索：客户案例、教育公益资助、数据中心投资、人事与并购、月度汇总。命中的不进 `triage`、不占每次的 2 条限额，明细写在 `reports/collect/candidates.md` 的「规则丢弃」一节。
 
 `action: drop` 直接丢；`action: hold` 留在报告里但不开 Issue，用来观察一条规则是不是砍得太狠。`keep` 段优先于所有规则，挡住「introducing …」这类明确发布被标题关键词误杀。改规则前先看被丢的清单，不要为了追求干净把真事件砍掉。
 
