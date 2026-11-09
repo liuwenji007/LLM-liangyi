@@ -48,6 +48,12 @@ pnpm review             # 对照来源核查全部事件，报告在 reports/rev
 
 PR 改动事件时会自动审查并在评论里贴报告。细节见 [CONTRIBUTING.md](CONTRIBUTING.md#ai-审查)。
 
+候选太多时先过一遍预审台，本地模型跑，不动 `verified`：
+
+```bash
+pnpm queue              # 开放候选 → 收 / 不收 / 待定，页面在 reports/precheck/index.html
+```
+
 ## 投稿
 
 规则在 [CONTRIBUTING.md](CONTRIBUTING.md)。仓库里有三个 Issue 模板：投稿事件、投稿梗图、勘误与申诉。网站页脚的链接会直接打开对应表单。

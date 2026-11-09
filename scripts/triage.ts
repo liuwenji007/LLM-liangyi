@@ -5,7 +5,7 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 
 const CANDIDATES = "reports/collect/candidates.json";
 const OUT = "reports/collect";
-const CHRONICLE_LIMIT = 5;
+const CHRONICLE_LIMIT = 2;
 const LABELS = {
   chronicle: "候选/编年",
   fun: "候选/乐子",
@@ -198,7 +198,7 @@ async function createIssue(repoName: string, item: Hit, lane: "chronicle" | "fun
 
 async function ensureLabels(repoName: string) {
   const specs = [
-    { name: LABELS.chronicle, color: "a5322b", description: "编年候选，每天最多 5 条，核实前不上线" },
+    { name: LABELS.chronicle, color: "a5322b", description: "编年候选，每次最多 2 条，核实前不上线" },
     { name: LABELS.fun, color: "c9a874", description: "乐子候选，每天最多 10 条，不进编年主轴" },
   ];
   for (const spec of specs) {

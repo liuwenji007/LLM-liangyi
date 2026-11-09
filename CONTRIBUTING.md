@@ -71,7 +71,7 @@ related: gpt-4o-2024
 
 `pnpm collect` 扫描已审核信源：AIHOT 公开 API，以及 `src/data/sources.yaml` 里写了 `feed` 的 RSS。已在事件里出现过的链接会去掉。结果在 `reports/collect/candidates.md`，只是线索。
 
-`pnpm triage` 用模型把线索分成编年、乐子、丢弃。编年每天最多开 5 个 Issue。乐子只写入 `reports/collect/triage.md`，不开 Issue。丢弃的同样只留在报告里。`collect` / `triage` / `draft` 不会把 `verified` 改成 `true`。维护者评论 `/收` 才会开草稿 PR。
+`pnpm triage` 用模型把线索分成编年、乐子、丢弃。编年每次最多开 2 个 Issue。乐子只写入 `reports/collect/triage.md`，不开 Issue。丢弃的同样只留在报告里。`collect` / `triage` / `draft` 不会把 `verified` 改成 `true`。维护者评论 `/收` 才会开草稿 PR。
 
 标签（脚本会补建）：`候选/编年`。`候选/乐子` 只留给以后的副轴，现在不再使用。
 
@@ -81,11 +81,46 @@ pnpm collect --window 24h
 pnpm triage                  # 读 candidates.json，粗分并开 Issue
 ```
 
-没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。Actions「主动收集」每天 UTC 01:00（北京时间约 9 点）跑最近 7 天，也可以手动触发。编年每天仍只新开 5 条；没开成 Issue、且还在这 7 天里的，第二天会再排队。超过 7 天仍没开 Issue 的才不再出现。需要仓库 Secret `DEEPSEEK_API_KEY`。
+没有 `feed` 的信源不会自动扫。要加入巡视，在该条上补 RSS/Atom 地址。Actions「主动收集」每周一 UTC 01:00（北京时间约 9 点）跑最近 8 天，也可以手动触发。编年每次仍只新开 2 条；没开成 Issue、且还在窗口里的，下次会再排队。
+
+### 采集节奏
+
+日更管道服务不了一个一年只发几十条的产品：每天 5 条候选会在两周内堆出一百多条没人处理的队列。所以采集按周跑，`triage` 每次只开 2 条，剩下的靠 `pnpm queue` 在本地筛。要提高产量就加高质量条目，不要加采集频率。需要仓库 Secret `DEEPSEEK_API_KEY`。
+
+### 规则前置过滤
+
+`src/data/prefilter.yaml` 在 `collect` 与 `triage` 之间砍掉一眼不该进编年的线索：客户案例、教育公益资助、数据中心投资、人事与并购、月度汇总。命中的不进 `triage`、不占每次的 2 条限额，明细写在 `reports/collect/candidates.md` 的「规则丢弃」一节。
+
+`action: drop` 直接丢；`action: hold` 留在报告里但不开 Issue，用来观察一条规则是不是砍得太狠。`keep` 段优先于所有规则，挡住「introducing …」这类明确发布被标题关键词误杀。改规则前先看被丢的清单，不要为了追求干净把真事件砍掉。
+
+### 预审台
+
+候选 Issue 堆起来之后，逐个打开判断「要不要」比核对本身更花时间。`pnpm queue` 把开放候选压成一张单子：
+
+> 脚本名不能叫 `precheck`：pnpm 会为每个脚本跑 `pre<名字>` 钩子，`pnpm check` 就会连带执行它，CI 会直接跑挂。
+
+```bash
+pnpm queue                             # 读开放候选 Issue（需要 GITHUB_TOKEN）
+pnpm queue --limit 20                  # 只看最新的 20 条
+pnpm queue --from issues.json          # 离线：喂一份 issue 列表 JSON
+pnpm queue --render-only               # 只重画页面，不重新调用模型
+```
+
+它对每条候选做三件事：抓原文（站点返回 403 时改用它自己的 RSS 导语，openai.com 就是这种情况）、按 `prefilter.yaml` 判一次规则、再让模型给出「收 / 不收 / 待定 + 明暗 + 中文标题摘要 + 查重」。结果在 `reports/precheck/index.html`：按建议收排序，每条一屏，带「复制 /收」和「复制 /丢」按钮。
+
+默认走本机模型，不产生 API 费用：
+
+```bash
+PRECHECK_BASE_URL=http://127.0.0.1:8000/v1 \
+PRECHECK_MODEL=rapid-mlx/Qwen3.8-27B-4bit-MTP-MLX \
+pnpm queue
+```
+
+四个约束写在脚本里，别绕过：只有 RSS 导语时不给出「高」把握；暗史缺 `severity` 的一律降成「待定」；`dup_of` 命中已入库条目的不给 `/收`；`verified` 任何情况下都不动。
 
 ### 每周处理
 
-1. 打开 Issues，筛 `候选/编年`，处理大约 3–5 条。
+1. `pnpm queue`，打开 `reports/precheck/index.html`，先点「只看建议收」，处理那几条。
 2. 要收：在候选 Issue 下评论 `/收`（仅维护者）。建议面是「待定」时必须写 `/收 明` 或 `/收 暗`，不会默认按暗史起草。Actions 抓原文、写 `verified: false` 的 YAML、开 PR，并在同一轮对照来源、跑 `pnpm check`。
 3. 采集页只有摘要、或官网拒抓时，在 `/收` 下面写 `来源: https://真站`（也可单独贴一行 URL），再贴标题和摘要。只要评论里有正文或改了来源，就不会去抓页面。卡片用你写的正文，Issue 的 `source:` 会改成真站。只写 `/收`、不贴正文时才会抓 Issue 里的原链接。
 4. 链接已入库，或抓不到页面且评论里没有手写摘要时，只留言，不开第二份。`/丢` 关掉的链接不会再开出来。已经有草稿时，新发一条 `/收` 会在原分支上更新标题、摘要和链接，并留下你补过的厂商、模型和严重程度。只编辑旧评论不会更新。
