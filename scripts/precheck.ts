@@ -6,6 +6,9 @@ import { fetchSource, loadPool, type Fetched } from "./lib/source-text";
 /**
  * 预审台：把开放的候选 Issue 压成一张能在一屏内点完的单子。
  *
+ * 入口是 `pnpm queue`，不能叫 precheck：pnpm 会为每个脚本跑 `pre<名字>` 钩子，
+ * `pnpm check` 会连带执行它，CI 直接跑挂（这个坑踩过一次）。
+ *
  * 只做「收 / 不收 / 待定」这一层判断，不写 YAML、不改 verified。
  * 行得通之后的动作仍然是 /收 → 草稿 PR → pnpm review → /核实。
  */
@@ -296,7 +299,7 @@ function isoOrEmpty(value: string): string {
 /** 只重画页面，不重新调用模型：改了样式或排序时用。 */
 function renderOnly() {
   const file = `${OUT}/queue.json`;
-  if (!existsSync(file)) throw new Error(`找不到 ${file}，先跑一次 pnpm precheck。`);
+  if (!existsSync(file)) throw new Error(`找不到 ${file}，先跑一次 pnpm queue。`);
   const saved = JSON.parse(readFileSync(file, "utf8")) as { model: string; rows: Row[] };
   const stats = summarize(saved.rows);
   writeFileSync(file, `${JSON.stringify({ generatedAt: new Date().toISOString(), model: saved.model, stats, rows: saved.rows }, null, 2)}\n`);

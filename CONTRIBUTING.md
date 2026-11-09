@@ -85,7 +85,7 @@ pnpm triage                  # 读 candidates.json，粗分并开 Issue
 
 ### 采集节奏
 
-日更管道服务不了一个一年只发几十条的产品：每天 5 条候选会在两周内堆出一百多条没人处理的队列。所以采集按周跑，`triage` 每次只开 2 条，剩下的靠 `precheck` 在本地筛。要提高产量就加高质量条目，不要加采集频率。需要仓库 Secret `DEEPSEEK_API_KEY`。
+日更管道服务不了一个一年只发几十条的产品：每天 5 条候选会在两周内堆出一百多条没人处理的队列。所以采集按周跑，`triage` 每次只开 2 条，剩下的靠 `pnpm queue` 在本地筛。要提高产量就加高质量条目，不要加采集频率。需要仓库 Secret `DEEPSEEK_API_KEY`。
 
 ### 规则前置过滤
 
@@ -95,13 +95,15 @@ pnpm triage                  # 读 candidates.json，粗分并开 Issue
 
 ### 预审台
 
-候选 Issue 堆起来之后，逐个打开判断「要不要」比核对本身更花时间。`pnpm precheck` 把开放候选压成一张单子：
+候选 Issue 堆起来之后，逐个打开判断「要不要」比核对本身更花时间。`pnpm queue` 把开放候选压成一张单子：
+
+> 脚本名不能叫 `precheck`：pnpm 会为每个脚本跑 `pre<名字>` 钩子，`pnpm check` 就会连带执行它，CI 会直接跑挂。
 
 ```bash
-pnpm precheck                          # 读开放候选 Issue（需要 GITHUB_TOKEN）
-pnpm precheck --limit 20               # 只看最新的 20 条
-pnpm precheck --from issues.json       # 离线：喂一份 issue 列表 JSON
-pnpm precheck --render-only            # 只重画页面，不重新调用模型
+pnpm queue                             # 读开放候选 Issue（需要 GITHUB_TOKEN）
+pnpm queue --limit 20                  # 只看最新的 20 条
+pnpm queue --from issues.json          # 离线：喂一份 issue 列表 JSON
+pnpm queue --render-only               # 只重画页面，不重新调用模型
 ```
 
 它对每条候选做三件事：抓原文（站点返回 403 时改用它自己的 RSS 导语，openai.com 就是这种情况）、按 `prefilter.yaml` 判一次规则、再让模型给出「收 / 不收 / 待定 + 明暗 + 中文标题摘要 + 查重」。结果在 `reports/precheck/index.html`：按建议收排序，每条一屏，带「复制 /收」和「复制 /丢」按钮。
@@ -111,14 +113,14 @@ pnpm precheck --render-only            # 只重画页面，不重新调用模型
 ```bash
 PRECHECK_BASE_URL=http://127.0.0.1:8000/v1 \
 PRECHECK_MODEL=rapid-mlx/Qwen3.8-27B-4bit-MTP-MLX \
-pnpm precheck
+pnpm queue
 ```
 
 四个约束写在脚本里，别绕过：只有 RSS 导语时不给出「高」把握；暗史缺 `severity` 的一律降成「待定」；`dup_of` 命中已入库条目的不给 `/收`；`verified` 任何情况下都不动。
 
 ### 每周处理
 
-1. `pnpm precheck`，打开 `reports/precheck/index.html`，先点「只看建议收」，处理那几条。
+1. `pnpm queue`，打开 `reports/precheck/index.html`，先点「只看建议收」，处理那几条。
 2. 要收：在候选 Issue 下评论 `/收`（仅维护者）。建议面是「待定」时必须写 `/收 明` 或 `/收 暗`，不会默认按暗史起草。Actions 抓原文、写 `verified: false` 的 YAML、开 PR，并在同一轮对照来源、跑 `pnpm check`。
 3. 采集页只有摘要、或官网拒抓时，在 `/收` 下面写 `来源: https://真站`（也可单独贴一行 URL），再贴标题和摘要。只要评论里有正文或改了来源，就不会去抓页面。卡片用你写的正文，Issue 的 `source:` 会改成真站。只写 `/收`、不贴正文时才会抓 Issue 里的原链接。
 4. 链接已入库，或抓不到页面且评论里没有手写摘要时，只留言，不开第二份。`/丢` 关掉的链接不会再开出来。已经有草稿时，新发一条 `/收` 会在原分支上更新标题、摘要和链接，并留下你补过的厂商、模型和严重程度。只编辑旧评论不会更新。

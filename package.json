@@ -12,7 +12,7 @@
     "check": "ASTRO_TELEMETRY_DISABLED=1 astro check",
     "collect": "tsx scripts/collect.ts",
     "triage": "tsx scripts/triage.ts",
-    "precheck": "tsx scripts/precheck.ts",
+    "queue": "tsx scripts/precheck.ts",
     "draft": "tsx scripts/draft.ts",
     "accept": "tsx scripts/accept.ts",
     "review": "tsx scripts/review.ts",

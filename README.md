@@ -51,7 +51,7 @@ PR 改动事件时会自动审查并在评论里贴报告。细节见 [CONTRIBUT
 候选太多时先过一遍预审台，本地模型跑，不动 `verified`：
 
 ```bash
-pnpm precheck           # 开放候选 → 收 / 不收 / 待定，页面在 reports/precheck/index.html
+pnpm queue              # 开放候选 → 收 / 不收 / 待定，页面在 reports/precheck/index.html
 ```
 
 ## 投稿
