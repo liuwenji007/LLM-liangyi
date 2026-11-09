@@ -1,0 +1,71 @@
+# 采集后的规则前置过滤：命中即不进 triage、不开 Issue。
+# 目的：把「客户案例 / 教育公益 / 数据中心 / 人事」这类一眼不该进编年的线索在花掉任何模型调用之前丢掉。
+# 这里是保守的一层——规则只处理高确定性的噪音，模糊的交给 pnpm precheck 的模型判断。
+# action: drop = 直接丢弃；hold = 留在报告里但不占当日 5 条限额。
+# url / title 都是不区分大小写的正则（子串匹配）。keep_* 命中时整条保留，用来挡住误杀。
+
+version: 1
+updated: 2026-11-09
+
+rules:
+  - id: google-education
+    why: Google 教育公益与课堂推广
+    action: drop
+    url: "blog\\.google/.*/education/"
+
+  - id: google-ads
+    why: 广告产品线，不是模型能力
+    action: drop
+    url: "blog\\.google/.*/ads-commerce/"
+
+  - id: google-chrome
+    why: 浏览器功能更新
+    action: drop
+    url: "blog\\.google/.*/products/chrome/"
+
+  - id: google-regional
+    why: 区域市场与公司新闻，不是模型事件
+    action: drop
+    url: "blog\\.google/company-news/.*/(around-the-globe|message-ceo)/"
+
+  - id: huggingface-blog
+    why: 第三方开发者博客，不是厂商发布或事故
+    action: hold
+    url: "huggingface\\.co/blog/"
+
+  - id: openai-customer-story
+    why: 客户案例与营销软文
+    action: drop
+    title: "(with (OpenAI|GPT-|Codex|ChatGPT|Daybreak|Sol|Astra))|(using (OpenAI|Gemini|ChatGPT) models?)|(using AI to )|(achieves? [0-9.]+% )"
+
+  - id: partnership
+    why: 商业合作公告，无能力跃迁
+    action: drop
+    title: "(partnership|partners? with|expands? (its )?partnership)"
+
+  - id: corporate
+    why: 人事、并购与财报
+    action: drop
+    title: "(appoints|to acquire|acquires [A-Z]|earnings call|voluntary exit|layoffs|CEO remarks)"
+
+  - id: infra-investment
+    why: 基础设施投资与地方政策
+    action: drop
+    title: "(data cent(er|re)|infrastructure, energy|investing in .*(infrastructure|energy|workforce)|digital sovereignty|compute capacity)"
+
+  - id: csr-education
+    why: 公益资助与教育培训
+    action: drop
+    title: "(funding for|grants? to|educators?|universit(y|ies)|classroom|nonprofits?|AI skills)"
+
+  - id: roundup
+    why: 月度汇总与营销合集
+    action: drop
+    title: "(the latest AI news we announced|monthly roundup|week in review)"
+
+keep:
+  - why: 明确的版本发布
+    title: "introducing (gpt|gemini|claude|qwen|deepseek|llama|genie|images|sora|omni|o[0-9])"
+
+  - why: 明确的发布动作
+    title: "(now available|generally available|launches|released|open.?sources?)"

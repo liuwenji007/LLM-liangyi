@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
+import { loadPrefilter, matchPrefilter, type PrefilterHit } from "./lib/prefilter";
 
 const SOURCES = "src/data/sources.yaml";
 const EVENTS = "src/data/events";
@@ -71,12 +72,37 @@ for (const source of pool) {
 }
 
 const skipped = pool.filter((source) => source.collect !== "aihot" && !source.feed && source.kind !== "archive");
-const fresh = dedupe(hits);
+const deduped = dedupe(hits);
+const prefilter = loadPrefilter();
+const fresh: Hit[] = [];
+const held: { hit: Hit; rule: PrefilterHit }[] = [];
+for (const hit of deduped) {
+  const rule = matchPrefilter(prefilter, hit);
+  if (!rule) fresh.push(hit);
+  else held.push({ hit, rule });
+}
+const dropped = held.filter((entry) => entry.rule.action === "drop");
+const lowPriority = held.filter((entry) => entry.rule.action === "hold");
 
 mkdirSync(OUT, { recursive: true });
-writeFileSync(`${OUT}/candidates.json`, JSON.stringify({ generatedAt: new Date().toISOString(), window: windowArg, notes, skipped: skipped.map((s) => s.id), items: fresh }, null, 2));
-writeFileSync(`${OUT}/candidates.md`, render(fresh, notes, skipped.map((s) => s.id)));
-console.log(`新线索 ${fresh.length} 条，报告 ${OUT}/candidates.md`);
+writeFileSync(
+  `${OUT}/candidates.json`,
+  JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      window: windowArg,
+      notes,
+      skipped: skipped.map((s) => s.id),
+      items: fresh,
+      dropped: dropped.map((entry) => ({ title: entry.hit.title, url: entry.hit.url, rule: entry.rule.id, why: entry.rule.why })),
+      held: lowPriority.map((entry) => ({ title: entry.hit.title, url: entry.hit.url, rule: entry.rule.id, why: entry.rule.why })),
+    },
+    null,
+    2,
+  ),
+);
+writeFileSync(`${OUT}/candidates.md`, render(fresh, notes, skipped.map((s) => s.id), dropped, lowPriority));
+console.log(`新线索 ${fresh.length} 条，规则丢弃 ${dropped.length} 条，降级 ${lowPriority.length} 条，报告 ${OUT}/candidates.md`);
 for (const line of notes) console.log(`  ${line}`);
 if (skipped.length) console.log(`  未配 feed、本次跳过：${skipped.map((s) => s.id).join("、")}`);
 
@@ -191,13 +217,20 @@ function norm(url: string): string {
   }
 }
 
-function render(items: Hit[], log: string[], skippedIds: string[]): string {
+function render(
+  items: Hit[],
+  log: string[],
+  skippedIds: string[],
+  dropped: { hit: Hit; rule: PrefilterHit }[],
+  held: { hit: Hit; rule: PrefilterHit }[],
+): string {
   const lines = [
     `# 收集候选`,
     ``,
-    `窗口 ${windowArg} · ${new Date().toISOString()} · 新线索 ${items.length} 条`,
+    `窗口 ${windowArg} · ${new Date().toISOString()} · 新线索 ${items.length} 条 · 规则丢弃 ${dropped.length} 条 · 降级 ${held.length} 条`,
     ``,
     `这些是发现结果，不是已核实事件。编年仍要追一手来源，再用 \`pnpm draft\` / \`pnpm review\`。`,
+    `规则见 \`src/data/prefilter.yaml\`：命中的不进 triage、不占当日限额。`,
     ``,
     ...log.map((line) => `- ${line}`),
     ``,
@@ -206,13 +239,24 @@ function render(items: Hit[], log: string[], skippedIds: string[]): string {
     lines.push(`未配置 \`feed\`、本次未扫：${skippedIds.join("、")}`, ``);
   }
   if (!items.length) {
-    lines.push("没有新链接。");
-    return lines.join("\n");
+    lines.push("没有新链接。", ``);
+  } else {
+    lines.push("| 日期 | 来自 | 级 | 标题 | 链接 |", "|---|---|---|---|---|");
+    for (const item of items) {
+      const title = item.title.replace(/\|/g, "/");
+      lines.push(`| ${item.date || "—"} | ${item.via} | ${item.tier} | ${title} | ${item.url} |`);
+    }
+    lines.push(``);
   }
-  lines.push("| 日期 | 来自 | 级 | 标题 | 链接 |", "|---|---|---|---|---|");
-  for (const item of items) {
-    const title = item.title.replace(/\|/g, "/");
-    lines.push(`| ${item.date || "—"} | ${item.via} | ${item.tier} | ${title} | ${item.url} |`);
+  if (held.length) {
+    lines.push(`## 降级（留在报告里，不开 Issue）`, ``);
+    for (const entry of held) lines.push(`- ${entry.hit.title} — ${entry.rule.id}：${entry.rule.why} ${entry.hit.url}`);
+    lines.push(``);
+  }
+  if (dropped.length) {
+    lines.push(`## 规则丢弃`, ``);
+    for (const entry of dropped) lines.push(`- ${entry.hit.title} — ${entry.rule.id}：${entry.rule.why} ${entry.hit.url}`);
+    lines.push(``);
   }
   return `${lines.join("\n")}\n`;
 }
