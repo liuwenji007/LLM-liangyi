@@ -6,7 +6,7 @@
 # feed: RSS/Atom，pnpm collect 会拉
 # collect: aihot = 走 AIHOT 公开 API（免 key）
 
-updated: 2026-10-16
+updated: 2026-11-09
 
 sources:
   # ——— 厂商一手 ———
@@ -154,11 +154,13 @@ sources:
   - id: eu-ai-office
     name: EU AI Office
     url: https://digital-strategy.ec.europa.eu/en/policies/ai-office
+    feed: https://digital-strategy.ec.europa.eu/en/rss.xml
     tier: 1
     kind: regulator
     lang: en
     lane: chronicle
     status: approved
+    notes: 整个数字政策栏目，不只 AI；粗分时丢掉 DSA、广告、年龄验证这类非模型事件
 
   - id: us-ftc
     name: U.S. FTC
@@ -275,12 +277,37 @@ sources:
   - id: aiid
     name: AI Incident Database
     url: https://incidentdatabase.ai/
+    feed: https://incidentdatabase.ai/rss.xml
     tier: 3
     kind: aggregator
     lang: en
     lane: chronicle
     status: approved
-    notes: 只作线索，入库仍要追一级来源
+    notes: 只作线索，入库仍要追一级来源；含非大模型事故，粗分时按 vendor / model 过滤
+
+  - id: openai-status
+    name: OpenAI Status
+    url: https://status.openai.com/
+    feed: https://status.openai.com/history.rss
+    tier: 1
+    kind: vendor
+    vendor: OpenAI
+    lang: en
+    lane: chronicle
+    status: approved
+    notes: 故障与降级的一手记录，暗史的常见来源；只收有用户可感知后果的
+
+  - id: claude-status
+    name: Claude Status
+    url: https://status.claude.com/
+    feed: https://status.anthropic.com/history.rss
+    tier: 1
+    kind: vendor
+    vendor: Anthropic
+    lang: en
+    lane: chronicle
+    status: approved
+    notes: 同 openai-status，注意域名是 status.claude.com
 
   - id: aiaaic
     name: AIAAIC

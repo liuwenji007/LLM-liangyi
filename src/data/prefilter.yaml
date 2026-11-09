@@ -28,6 +28,11 @@ rules:
     action: drop
     url: "blog\\.google/company-news/.*/(around-the-globe|message-ceo)/"
 
+  - id: status-page
+    why: 状态页的例行故障与降级，只在周报里看，不自动开候选；重大事故手动起草
+    action: hold
+    url: "status\\.(openai\\.com|anthropic\\.com|claude\\.com)"
+
   - id: huggingface-blog
     why: 第三方开发者博客，不是厂商发布或事故
     action: hold
