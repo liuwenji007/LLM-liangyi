@@ -52,6 +52,7 @@ PR 改动事件时会自动审查并在评论里贴报告。细节见 [CONTRIBUT
 
 ```bash
 pnpm queue              # 开放候选 → 收 / 不收 / 待定，页面在 reports/precheck/index.html
+pnpm queue --draft 124  # 按预审结果写草稿并开 PR，verified 仍是 false
 ```
 
 ## 投稿

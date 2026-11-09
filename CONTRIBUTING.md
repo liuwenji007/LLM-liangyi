@@ -91,7 +91,11 @@ pnpm triage                  # 读 candidates.json，粗分并开 Issue
 
 `src/data/prefilter.yaml` 在 `collect` 与 `triage` 之间砍掉一眼不该进编年的线索：客户案例、教育公益资助、数据中心投资、人事与并购、月度汇总。命中的不进 `triage`、不占每次的 2 条限额，明细写在 `reports/collect/candidates.md` 的「规则丢弃」一节。
 
-`action: drop` 直接丢；`action: hold` 留在报告里但不开 Issue，用来观察一条规则是不是砍得太狠。`keep` 段优先于所有规则，挡住「introducing …」这类明确发布被标题关键词误杀。改规则前先看被丢的清单，不要为了追求干净把真事件砍掉。
+`action: drop` 直接丢；`action: hold` 留在报告里但不开 Issue，用来观察一条规则是不是砍得太狠。
+
+`keep` 只豁免与它同类的那一半：写 `title` 的 keep 只压住标题类规则，URL 规则照旧生效（否则「Introducing Gemini for Education」会从教育栏目那条 URL 规则底下逃出去）；写 `url` 的 keep 才是全部豁免。改规则前先看被丢的清单，不要为了追求干净把真事件砍掉。
+
+`--window` 认任意 `Nd` 或 `Nh`，`pnpm collect --window 8d` 就真的是八天。
 
 ### 预审台
 
@@ -104,6 +108,8 @@ pnpm queue                             # 读开放候选 Issue（需要 GITHUB_T
 pnpm queue --limit 20                  # 只看最新的 20 条
 pnpm queue --from issues.json          # 离线：喂一份 issue 列表 JSON
 pnpm queue --render-only               # 只重画页面，不重新调用模型
+pnpm queue --draft 124                 # 用预审结果写草稿并开 PR（不开 /收 也能走）
+pnpm queue --draft 124 --force         # 覆盖已存在的 draft/issue-124 分支
 ```
 
 它对每条候选做三件事：抓原文（站点返回 403 时改用它自己的 RSS 导语，openai.com 就是这种情况）、按 `prefilter.yaml` 判一次规则、再让模型给出「收 / 不收 / 待定 + 明暗 + 中文标题摘要 + 查重」。结果在 `reports/precheck/index.html`：按建议收排序，每条一屏，带「复制 /收」和「复制 /丢」按钮。
@@ -116,7 +122,11 @@ PRECHECK_MODEL=rapid-mlx/Qwen3.8-27B-4bit-MTP-MLX \
 pnpm queue
 ```
 
-四个约束写在脚本里，别绕过：只有 RSS 导语时不给出「高」把握；暗史缺 `severity` 的一律降成「待定」；`dup_of` 命中已入库条目的不给 `/收`；`verified` 任何情况下都不动。
+`--draft` 直接拿预审字段写 `verified: false` 的 YAML 并开 PR，省掉手工补厂商型号摘要那一遍。它在开 PR 前会做四件事：原文 URL 已在库里就拒绝（不让同一事件出现两份）、`related` 必须指向库里的明史且不晚于本条、暗史缺 `response` 时提醒你在 PR 里补一句、信源是厂商就给 `basis: official`。
+
+五个约束写在脚本里，别绕过：只有 RSS 导语时不给出「高」把握；暗史缺 `severity` 的一律降成「待定」；`dup_of` 命中已入库条目的不给 `/收`；原文已在库的不给开第二份；`verified` 任何情况下都不动。
+
+每次预审会在 `reports/precheck/runs/` 留一份快照（只留最近 30 次）。`queue.json` 会被下一次覆盖，想查「当时为什么判不收」翻 `runs/`。
 
 ### 每周处理
 

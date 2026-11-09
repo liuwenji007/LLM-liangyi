@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { parse } from "yaml";
 import { loadPrefilter, matchPrefilter, type PrefilterHit } from "./lib/prefilter";
 import { stringify } from "yaml";
-import { fetchSource, host, loadPool, type Fetched } from "./lib/source-text";
+import { fetchSource, host, loadPool, norm, type Fetched } from "./lib/source-text";
 import { createManualDraft } from "./draft";
 
 /**
@@ -25,6 +25,7 @@ type Verdict = {
   date: string | null;
   title_zh: string;
   summary_zh: string;
+  response: string | null;
   severity: number | null;
   category: string[];
   related: string | null;
@@ -69,16 +70,26 @@ const library = loadLibrary();
 const prefilter = loadPrefilter();
 const pool = loadPool();
 
-function loadLibrary(): { id: string; date: string; vendor: string; title: string }[] {
+function loadLibrary(): {
+  id: string;
+  date: string;
+  vendor: string;
+  title: string;
+  side: string;
+  sources: string[];
+}[] {
   return readdirSync(EVENTS_DIR)
     .filter((name) => name.endsWith(".yaml"))
     .map((name) => {
       const data = (parse(readFileSync(`${EVENTS_DIR}/${name}`, "utf8")) ?? {}) as Record<string, unknown>;
+      const sources = Array.isArray(data.sources) ? (data.sources as { url?: string }[]) : [];
       return {
         id: name.replace(/\.yaml$/, ""),
         date: String(data.date instanceof Date ? data.date.toISOString().slice(0, 10) : data.date ?? "").slice(0, 10),
         vendor: String(data.vendor ?? ""),
         title: String(data.title ?? ""),
+        side: String(data.side ?? ""),
+        sources: sources.map((item) => item.url ?? "").filter(Boolean),
       };
     })
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -113,8 +124,8 @@ function field(body: string, name: string): string {
 const SYSTEM = `你是「两仪」的入库预审员。两仪是中文的大模型编年史：明史（light）记发布与里程碑，暗史（dark）记翻车、事故、监管与事后。
 中国读者看的是一条有时间、有出处、能翻回去核对的事件线，不是新闻聚合。宁缺勿滥。
 
-已入库条目（编号 | 日期 | 厂商 | 标题）：
-${library.map((event) => `${event.id} | ${event.date} | ${event.vendor} | ${event.title}`).join("\n")}
+已入库条目（编号 | 日期 | 明/暗 | 厂商 | 标题）：
+${library.map((event) => `${event.id} | ${event.date} | ${event.side === "dark" ? "暗" : "明"} | ${event.vendor} | ${event.title}`).join("\n")}
 
 收录标准：
 - 明史只收改变公众对该模型能力认知的发布：重要版本、能力跃迁、定价结构变化、行业格局级合作。
@@ -123,10 +134,13 @@ ${library.map((event) => `${event.id} | ${event.date} | ${event.vendor} | ${even
 - 拿不准就填「待定」，不要为了凑数填「收」。
 - 与已入库条目重复的，dup_of 填那个编号，decision 填「不收」。
 - summary_zh 只能用给到的材料里能查到的内容，60 字以内，陈述事实，不用形容词。
+- 暗史要写 response：只写厂商、监管方或法院做了什么（道歉、回滚、下架、罚款、被起诉），不写推测和评论。原文里没有就填 null。
+- 暗史能对上一次明史发布时，related 填那条明史的编号，必须是上面列表里的「明」条目，日期不能早于它。没有把握就填 null。
+- 明史不填 severity、related、response。
 - 只有 RSS 导语、没有正文时，confidence 填「低」，并且不要在 summary_zh 里写导语没有的事实。
 
 只输出 JSON，不要别的内容：
-{"decision":"收|不收|待定","side":"light|dark|null","vendor":"","model":"","date":"YYYY-MM-DD|null","title_zh":"","summary_zh":"","severity":null,"category":[],"related":null,"dup_of":null,"why":"一句中文","confidence":"高|中|低"}`;
+{"decision":"收|不收|待定","side":"light|dark|null","vendor":"","model":"","date":"YYYY-MM-DD|null","title_zh":"","summary_zh":"","response":null,"severity":null,"category":[],"related":null,"dup_of":null,"why":"一句中文","confidence":"高|中|低"}`;
 
 async function classify(row: { title: string; url: string; collectedAt: string; suggested: string; summary: string }, source: Fetched): Promise<Verdict> {
   const material = source.text
@@ -185,6 +199,7 @@ function normalize(verdict: Partial<Verdict>, source: Fetched): Verdict {
     date: typeof verdict.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(verdict.date) ? verdict.date : null,
     title_zh: String(verdict.title_zh ?? "").trim(),
     summary_zh: String(verdict.summary_zh ?? "").trim(),
+    response: typeof verdict.response === "string" && verdict.response.trim() && verdict.response !== "null" ? verdict.response.trim() : null,
     severity,
     category: Array.isArray(verdict.category) ? verdict.category.filter((item): item is string => typeof item === "string") : [],
     related: typeof verdict.related === "string" && verdict.related.trim() ? verdict.related.trim() : null,
@@ -255,6 +270,7 @@ async function one(issue: Issue): Promise<Row> {
         date: null,
         title_zh: "",
         summary_zh: "",
+        response: null,
         severity: null,
         category: [],
         related: null,
@@ -338,6 +354,10 @@ async function draftFromQueue(numbers: number[]) {
       verdict.side === "dark" && !verdict.severity ? "暗史缺严重程度" : "",
     ].filter(Boolean);
     if (missing.length > 0) throw new Error(`#${number} 不能开草稿：${missing.join("、")}`);
+    const existing = library.find((event) => event.sources.some((src) => norm(src) === norm(row.url)));
+    if (existing) {
+      throw new Error(`#${number} 的原文已经在库里：${existing.id}（${existing.title}）。先改那一条，别开第二份。`);
+    }
 
     const branch = `draft/issue-${number}`;
     const opened = await findPr(branch);
@@ -356,6 +376,7 @@ async function draftFromQueue(numbers: number[]) {
       vendor: verdict.vendor,
       model: verdict.model,
       severity: verdict.side === "dark" ? verdict.severity ?? undefined : undefined,
+      response: verdict.side === "dark" ? verdict.response ?? undefined : undefined,
     });
     // 预审分好的类目和信源性质，草稿阶段就带上，省得核实前再补一遍。
     const doc = parse(readFileSync(draft.path, "utf8")) as Record<string, unknown>;
@@ -363,6 +384,17 @@ async function draftFromQueue(numbers: number[]) {
     const source = pool.find((item) => host(item.url) === host(row.url));
     if (source?.kind === "vendor") doc.basis = "official";
     else if (source) doc.basis = "independent";
+    // related 只能指向库里的明史，且不能晚于这条暗史；不合格就丢掉，别让构建失败。
+    if (verdict.side === "dark" && verdict.related) {
+      const parent = library.find((event) => event.id === verdict.related);
+      if (!parent) console.warn(`  related ${verdict.related} 不在库里，已丢掉`);
+      else if (parent.side !== "light") console.warn(`  related ${parent.id} 不是明史，已丢掉`);
+      else if (parent.date > String(verdict.date ?? row.collectedAt ?? "")) console.warn(`  related ${parent.id} 晚于本条，已丢掉`);
+      else doc.related = parent.id;
+    }
+    if (verdict.side === "dark" && !verdict.response) {
+      console.log(`  #${number} 暗史没有 response（原文没写事后），PR 里会提示补一句。`);
+    }
     writeFileSync(draft.path, stringify(doc, { lineWidth: 0 }));
     const content = readFileSync(draft.path, "utf8");
     const url = await pushDraft(branch, draft.path, content, number, draft.title, row.url, opened, force);
@@ -477,7 +509,14 @@ async function main() {
 
   mkdirSync(OUT, { recursive: true });
   const stats = summarize(rows);
-  writeFileSync(`${OUT}/queue.json`, `${JSON.stringify({ generatedAt: new Date().toISOString(), model, stats, rows }, null, 2)}\n`);
+  const snapshot = { generatedAt: new Date().toISOString(), model, stats, rows };
+  writeFileSync(`${OUT}/queue.json`, `${JSON.stringify(snapshot, null, 2)}\n`);
+  // 每次运行留一份，别让「当时为什么判不收」随下一次覆盖消失。
+  mkdirSync(`${OUT}/runs`, { recursive: true });
+  const stamp = snapshot.generatedAt.replace(/[:]/g, "-").slice(0, 19);
+  writeFileSync(`${OUT}/runs/${stamp}.json`, `${JSON.stringify(snapshot, null, 2)}\n`);
+  const history = readdirSync(`${OUT}/runs`).filter((name) => name.endsWith(".json")).sort();
+  for (const stale of history.slice(0, Math.max(0, history.length - 30))) unlinkSync(`${OUT}/runs/${stale}`);
   writeFileSync(`${OUT}/report.md`, renderMarkdown(rows, stats));
   writeFileSync(`${OUT}/index.html`, renderHtml(rows, stats));
   console.log(`收 ${stats.收} · 待定 ${stats.待定} · 不收 ${stats.不收} · 全文 ${stats.fullText} · 仅导语 ${stats.lede} · 没取到 ${stats.none}`);
