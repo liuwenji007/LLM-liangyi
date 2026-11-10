@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
-import { parse, stringify } from "yaml";
+import { parse, parseDocument, stringify } from "yaml";
 import { toDate } from "./date.js";
 import { createDraft, createManualDraft, type DraftBasis, type DraftSide } from "./draft.js";
 
@@ -35,7 +35,7 @@ if (event.issue.pull_request) {
     console.log("PR 上只接受 /核实。");
     process.exit(0);
   }
-  await verifyPull(issue);
+  await verifyPull(issue, commentBody);
   process.exit(0);
 }
 
@@ -232,6 +232,37 @@ function loadEvent(): IssueEvent | undefined {
   return JSON.parse(readFileSync(path, "utf8")) as IssueEvent;
 }
 
+const OVERRIDE_KEYS: Record<string, "summary" | "title" | "vendor" | "model" | "severity"> = {
+  摘要: "summary",
+  标题: "title",
+  厂商: "vendor",
+  型号: "model",
+  严重程度: "severity",
+};
+
+/** `/核实` 下面可以带 `摘要: …` `标题: …` `厂商: …` `型号: …` `严重程度: …`，先改再核。 */
+function readOverrides(body: string): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const raw of body.split(/\r?\n/).slice(1)) {
+    const match = /^(摘要|标题|厂商|型号|严重程度)[:：]\s*(.+)$/.exec(raw.trim());
+    if (!match) continue;
+    const key = OVERRIDE_KEYS[match[1]];
+    const value = match[2].trim();
+    if (!value) continue;
+    if (key === "severity") {
+      const level = Number(value);
+      if (!Number.isInteger(level) || level < 1 || level > 5) {
+        console.log(`严重程度 ${value} 不在 1–5，忽略`);
+        continue;
+      }
+      out.severity = level;
+      continue;
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
 function readCommand(body: string): { action: "收"; side?: DraftSide } | { action: "丢" } | { action: "核实" } | undefined {
   const line = body.trim().split(/\r?\n/)[0]?.trim() ?? "";
   if (line === "/丢") return { action: "丢" };
@@ -423,7 +454,7 @@ function existingPr(branch: string): string | undefined {
   }
 }
 
-async function verifyPull(number: number) {
+async function verifyPull(number: number, body: string) {
   if (!repo) {
     console.log("没有仓库地址。");
     return;
@@ -449,6 +480,20 @@ async function verifyPull(number: number) {
   if (names.length > 1) {
     await comment(number, ["这个 PR 改了多份事件，`/核实` 不会一次全部打开。", "", ...names.map((file) => `- \`${file}\``)].join("\n"));
     return;
+  }
+
+  const overrides = readOverrides(body);
+  const touched = Object.keys(overrides);
+  if (touched.length > 0) {
+    const file = names[0];
+    if (!existsSync(file)) {
+      await comment(number, `\`${file}\` 不在这个分支上，没法改。`);
+      return;
+    }
+    const doc = parseDocument(readFileSync(file, "utf8"));
+    for (const [key, value] of Object.entries(overrides)) doc.set(key, value);
+    writeFileSync(file, doc.toString({ lineWidth: 0 }));
+    console.log(`改了 ${touched.join("、")}：${file}`);
   }
 
   const check = runCheck();
@@ -487,7 +532,16 @@ async function verifyPull(number: number) {
   execFileSync("git", ["push", "-u", "origin", "HEAD"], { stdio: "inherit" });
   await comment(
     number,
-    ["已核实，可以合并。上线仍需本机 `pnpm deploy:server`。", "", ...flipped.map((file) => `- \`${file}\``), "", check].join("\n"),
+    [
+      "已核实，可以合并。上线仍需本机 `pnpm deploy:server`。",
+      "",
+      ...flipped.map((file) => `- \`${file}\``),
+      touched.length > 0 ? `- 按评论改了：${touched.join("、")}` : "",
+      "",
+      check,
+    ]
+      .filter(Boolean)
+      .join("\n"),
   );
 }
 
