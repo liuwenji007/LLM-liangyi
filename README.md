@@ -48,12 +48,38 @@ pnpm review             # 对照来源核查全部事件，报告在 reports/rev
 
 PR 改动事件时会自动审查并在评论里贴报告。细节见 [CONTRIBUTING.md](CONTRIBUTING.md#ai-审查)。
 
-候选太多时先过一遍预审台，本地模型跑，不动 `verified`：
+候选太多时先过一遍预审台（本地模型跑，不动 `verified`），见下面「维护者操作」。
+
+## 维护者操作
+
+候选和草稿是两回事，处理方式不一样。
+
+**候选 Issue**（`候选/编年` 标签）
 
 ```bash
-pnpm queue              # 开放候选 → 收 / 不收 / 待定，页面在 reports/precheck/index.html
-pnpm queue --draft 124  # 按预审结果写草稿并开 PR，verified 仍是 false
+pnpm queue                  # 预审台：开放候选压成一张单子，页面在 reports/precheck/index.html
+pnpm queue --draft 124      # 按预审结果写草稿并开 PR，verified 仍是 false
 ```
+
+在 Issue 里评论（只有仓库维护者有效）：`/收` 起草，面待定时写 `/收 明` 或 `/收 暗`，`/丢` 关闭。
+
+**草稿 PR**
+
+| 情况 | 怎么做 |
+|---|---|
+| 该收 | 改 YAML 字段 → **在本 PR 评论 `/核实`** → 合并 → 本机 `pnpm deploy:server` |
+| 不该收 | 关 PR，**并且关掉它对应的 Issue**；只关 PR 的话链接还在队列里，下次采集还会撞上它 |
+| 字段全是「待补充」 | 先用 `pnpm queue --draft <issue 号> --force` 重写这份草稿，再按第一行走 |
+
+`/核实` 只在 PR 上有效，而且**必须在合并之前**。合并后的 PR 不能再走这个通道，`verified` 会一直是 `false`，条目不会出现在时间线上。
+
+顺序记成一条线：
+
+```text
+候选 Issue → 草稿 PR → /核实（翻 verified）→ 合并 → pnpm deploy:server
+```
+
+少了 `/核实` 那一步，前面全做了也看不见。细节见 [CONTRIBUTING.md](CONTRIBUTING.md#每周处理)。
 
 ## 投稿
 
